@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-light-from: #fef7f4;
+    --bg-light-via: #fff0ee;
+    --bg-light-to: #fff7f4;
+    --bg-dark-from: #0f172a;
+    --bg-dark-via: #1e3a8a;
+    --bg-dark-to: #0f172a;
+  }
+  
+  .dark {
+    color-scheme: dark;
+  }
+  
+  .bg-gradient-to-br {
+    background: linear-gradient(to bottom right, var(--bg-light-from), var(--bg-light-via), var(--bg-light-to));
+  }
+  
+  .dark .bg-gradient-to-br {
+    background: linear-gradient(to bottom right, var(--bg-dark-from), var(--bg-dark-via), var(--bg-dark-to));
+  }
+  
+  /* Dark mode overrides for Tailwind classes */
+  .dark .text-gray-800 {
+    color: #f1f5f9 !important;
+  }
+  
+  .dark .text-gray-700 {
+    color: #cbd5e1 !important;
+  }
+  
+  .dark .text-gray-600 {
+    color: #94a3b8 !important;
+  }
+  
+  .dark .text-gray-500 {
+    color: #64748b !important;
+  }
+  
+  .dark .bg-white\/30 {
+    background-color: rgba(15, 23, 42, 0.7) !important;
+  }
+  
+  .dark .border-white\/20 {
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+  
+  .dark .bg-white\/50 {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+  }
+  
+  .dark .bg-white\/80 {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+  }
+  
+  .dark .backdrop-blur-lg {
+    backdrop-filter: blur(16px) !important;
+  }
+  
+  .dark select,
+  .dark input,
+  .dark textarea {
+    background-color: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+  }
+  
+  .dark .bg-gray-200 {
+    background-color: #334155 !important;
+  }
+  
+  .dark .bg-gray-50 {
+    background-color: #1e293b !important;
+  }
+  
+  .dark .hover\:bg-gray-300:hover {
+    background-color: #475569 !important;
+  }
+  
+  .dark .hover\:bg-white\/80:hover {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+  }
+  
+  .dark .hover\:bg-gray-50:hover {
+    background-color: #334155 !important;
+  }
+  
+  /* Scrollbar styling for dark mode */
+  .dark ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .dark ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
+  }
+  
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+}
