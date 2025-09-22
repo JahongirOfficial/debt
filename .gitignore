@@ -7,3 +7,11 @@ dist/
 *.mp4
 *.avi
 .env
+dist/
+dist-electron/
+*.exe
+*.asar
+dist/
+dist-electron/
+*.exe
+*.asar

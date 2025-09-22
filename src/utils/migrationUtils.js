@@ -5,10 +5,8 @@
 // Function to migrate debts from localStorage to MongoDB
 export const migrateDebts = async (token) => {
   try {
-    // Get backend port from Electron in desktop app or use default
-    const backendPort = window.electronAPI && window.electronAPI.getBackendPort 
-      ? await window.electronAPI.getBackendPort().catch(() => 5000)
-      : 5000;
+    // Use default backend port
+    const backendPort = 5000;
 
     // Get debts from localStorage
     const storedDebts = localStorage.getItem('qarzdaftar_debts');

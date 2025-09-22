@@ -12,24 +12,8 @@ export const AuthProvider = ({ children }) => {
     currency: 'UZS',
     theme: 'light'
   });
-  const [backendPort, setBackendPort] = useState(5000); // Default port
+  const [backendPort] = useState(5000); // Default port
   const [backendAvailable, setBackendAvailable] = useState(true); // Track backend availability
-
-  // Get backend port from Electron in desktop app
-  useEffect(() => {
-    const getBackendPort = async () => {
-      if (window.electronAPI && window.electronAPI.getBackendPort) {
-        try {
-          const port = await window.electronAPI.getBackendPort();
-          setBackendPort(port);
-        } catch (error) {
-          console.error('Error getting backend port:', error);
-        }
-      }
-    };
-    
-    getBackendPort();
-  }, []);
 
   // Check if backend is available
   useEffect(() => {

@@ -2,17 +2,14 @@
   "name": "qarzdaftar",
   "private": true,
   "version": "0.1.0",
-  "description": "Qarzdaftar - Qarzlarni kuzatish uchun desktop ilova",
-  "main": "electron-main.js",
+  "description": "Qarzdaftar - Qarzlarni kuzatish uchun veb ilova",
+  "main": "src/main.jsx",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:full": "concurrently \"npm run dev\" \"cd backend && npm run dev\"",
-    "dev:electron": "concurrently \"npm run dev\" \"ELECTRON_START_URL=http://localhost:5173 electron .\"",
     "build": "vite build",
-    "build:electron": "npm run build && electron-builder",
-    "preview": "vite preview",
-    "start": "electron ."
+    "preview": "vite preview"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -34,43 +31,9 @@
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.14",
     "concurrently": "^9.2.1",
-    "electron": "^38.1.2",
-    "electron-builder": "^26.0.12",
     "nodemon": "^3.1.10",
     "postcss": "^8.4.27",
     "tailwindcss": "^3.3.3",
     "vite": "^4.4.5"
-  },
-  "build": {
-    "appId": "com.qarzdaftar.app",
-    "productName": "Qarzdaftar",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron-main.js",
-      "electron-preload.js",
-      "backend/**/*",
-      "lang/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "backend/",
-        "to": "backend/",
-        "filter": ["**/*"]
-      }
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "src/assets/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
   }
 }

@@ -11,23 +11,7 @@ export const DebtProvider = ({ children }) => {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [backendPort, setBackendPort] = useState(5000); // Default port
-
-  // Get backend port from Electron in desktop app
-  useEffect(() => {
-    const getBackendPort = async () => {
-      if (window.electronAPI && window.electronAPI.getBackendPort) {
-        try {
-          const port = await window.electronAPI.getBackendPort();
-          setBackendPort(port);
-        } catch (error) {
-          console.error('Error getting backend port:', error);
-        }
-      }
-    };
-    
-    getBackendPort();
-  }, []);
+  const [backendPort] = useState(5000); // Default port
 
   // Fetch debts from backend
   const fetchDebts = async () => {
