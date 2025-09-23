@@ -128,6 +128,7 @@ export function QarzdaftarDebts() {
     if (!result.success) {
       console.error('Failed to mark debt as paid:', result.message);
     }
+    return result;
   };
 
   const deleteDebtHandler = async (id) => {
@@ -135,6 +136,7 @@ export function QarzdaftarDebts() {
     if (!result.success) {
       console.error('Failed to delete debt:', result.message);
     }
+    return result;
   };
 
   // Improved modal close function for Add Debt modal
@@ -562,7 +564,10 @@ export function QarzdaftarDebts() {
                       {debt.status === 'pending' && (
                         <>
                           <button
-                            onClick={() => markAsPaidHandler(debt._id)}
+                            onClick={async () => {
+                              const result = await markAsPaidHandler(debt._id);
+                              // Optionally, you could show a notification or update the UI here
+                            }}
                             className="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                             title={t('debts.form.markAsPaid', 'To\'langan deb belgilash')}
                           >
@@ -571,7 +576,10 @@ export function QarzdaftarDebts() {
                             </svg>
                           </button>
                           <button
-                            onClick={() => deleteDebtHandler(debt._id)}
+                            onClick={async () => {
+                              const result = await deleteDebtHandler(debt._id);
+                              // Optionally, you could show a notification or update the UI here
+                            }}
                             className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             title={t('common.delete', 'O\'chirish')}
                           >
@@ -581,6 +589,7 @@ export function QarzdaftarDebts() {
                           </button>
                         </>
                       )}
+
                     </div>
                   </td>
                 </tr>
@@ -850,9 +859,11 @@ export function QarzdaftarDebts() {
                 {showDetailsModal.status === 'pending' && (
                   <>
                     <button
-                      onClick={() => {
-                        markAsPaidHandler(showDetailsModal._id);
-                        closeDetailsModal();
+                      onClick={async () => {
+                        const result = await markAsPaidHandler(showDetailsModal._id);
+                        if (result && result.success) {
+                          closeDetailsModal();
+                        }
                       }}
                       className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white py-2 rounded-lg font-medium transition-all"
                     >
@@ -870,9 +881,11 @@ export function QarzdaftarDebts() {
                   </>
                 )}
                 <button
-                  onClick={() => {
-                    deleteDebtHandler(showDetailsModal._id);
-                    closeDetailsModal();
+                  onClick={async () => {
+                    const result = await deleteDebtHandler(showDetailsModal._id);
+                    if (result && result.success) {
+                      closeDetailsModal();
+                    }
                   }}
                   className="flex-1 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white py-2 rounded-lg font-medium transition-all"
                 >

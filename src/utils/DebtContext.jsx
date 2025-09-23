@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { apiFetch } from './api';
 
 // Create the context
 const DebtContext = createContext();
@@ -11,7 +12,6 @@ export const DebtProvider = ({ children }) => {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [backendPort] = useState(5000); // Default port
 
   // Fetch debts from backend
   const fetchDebts = async () => {
@@ -20,7 +20,7 @@ export const DebtProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/debts`, {
+      const response = await apiFetch('/debts', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/ratings`, {
+      const response = await apiFetch('/ratings', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/ratings/calculate`, {
+      const response = await apiFetch('/ratings/calculate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -102,7 +102,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/debts`, {
+      const response = await apiFetch('/debts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -145,7 +145,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/debts/${id}`, {
+      const response = await apiFetch(`/debts/${id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -188,7 +188,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/debts/${id}`, {
+      const response = await apiFetch(`/debts/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -230,7 +230,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/debts/${id}/pay`, {
+      const response = await apiFetch(`/debts/${id}/pay`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/qarzdaftar';
 
 // Middleware
@@ -742,3 +742,162 @@ app.put('/api/settings', authenticateToken, async (req, res) => {
     });
   }
 });
+
+// Qarzni yangilash
+app.put('/api/debts/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Debt updated successfully (test mode)',
+      debt: {
+        _id: req.params.id,
+        userId: 'test-user-id',
+        ...req.body,
+        updatedAt: new Date()
+      }
+    });
+  }
+  
+  try {
+    const { amount, phone, countryCode, description } = req.body;
+    
+    // Yangilash obyektini yaratish
+    const update = {};
+    if (amount !== undefined) update.amount = amount;
+    if (phone !== undefined) update.phone = phone;
+    if (countryCode !== undefined) update.countryCode = countryCode;
+    if (description !== undefined) update.description = description;
+    
+    // Qarzni yangilash
+    const debt = await Debt.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      { ...update, updatedAt: new Date() },
+      { new: true }
+    );
+    
+    if (!debt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Debt updated successfully',
+      debt
+    });
+  } catch (error) {
+    console.error('Update debt error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error updating debt' 
+    });
+  }
+});
+
+// Qarzni o'chirish
+app.delete('/api/debts/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Debt deleted successfully (test mode)'
+    });
+  }
+  
+  try {
+    // Qarzni o'chirish
+    const debt = await Debt.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    
+    if (!debt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Debt deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete debt error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error deleting debt' 
+    });
+  }
+});
+
+// Qarzni to'langan deb belgilash
+app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Debt marked as paid successfully (test mode)',
+      debt: {
+        _id: req.params.id,
+        userId: 'test-user-id',
+        status: 'paid',
+        paidAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+  }
+  
+  try {
+    // Qarzni to'langan deb belgilash
+    const debt = await Debt.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      { 
+        status: 'paid', 
+        paidAt: new Date(),
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    if (!debt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Debt marked as paid successfully',
+      debt
+    });
+  } catch (error) {
+    console.error('Mark debt as paid error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error marking debt as paid' 
+    });
+  }
+});
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: 'API endpoint not found' 
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Internal server error' 
+  });
+});
+

@@ -1,53 +1,63 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
-async function testLogin() {
+// Test login with the production API
+const testLogin = async () => {
   try {
-    // First, let's try to log in with our test user
-    const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
+    // Use production API URL
+    const apiUrl = 'https://debt-tracker.prox.uz/api';
+    
+    // Login data
+    const loginData = {
+      email: 'test@example.com',
+      password: 'password123'
+    };
+
+    // Login user
+    console.log('Logging in...');
+    const loginResponse = await fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        email: 'test@example.com',
-        password: 'password123'
-      }),
+      body: JSON.stringify(loginData),
     });
 
-    const loginData = await loginResponse.json();
-    console.log('Login response:', loginData);
+    const loginResult = await loginResponse.json();
+    console.log('Login result:', loginResult);
 
-    if (loginData.success) {
-      console.log('Login successful!');
-      console.log('Token:', loginData.token);
-      
-      // Now let's try to access a protected endpoint
-      const debtsResponse = await fetch('http://localhost:5000/api/debts', {
-        headers: {
-          'Authorization': `Bearer ${loginData.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const debtsData = await debtsResponse.json();
-      console.log('Debts response:', debtsData);
-      
-      // Let's also try to access ratings
-      const ratingsResponse = await fetch('http://localhost:5000/api/ratings', {
-        headers: {
-          'Authorization': `Bearer ${loginData.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const ratingsData = await ratingsResponse.json();
-      console.log('Ratings response:', ratingsData);
-    } else {
-      console.log('Login failed:', loginData.message);
+    if (!loginResult.success) {
+      console.error('Login failed:', loginResult.message);
+      return;
     }
+
+    const { token } = loginResult;
+
+    // Get debts
+    console.log('\nFetching debts...');
+    const debtsResponse = await fetch(`${apiUrl}/debts`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const debtsResult = await debtsResponse.json();
+    console.log('Debts result:', debtsResult);
+
+    // Get ratings
+    console.log('\nFetching ratings...');
+    const ratingsResponse = await fetch(`${apiUrl}/ratings`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const ratingsResult = await ratingsResponse.json();
+    console.log('Ratings result:', ratingsResult);
+
+    console.log('\nLogin test completed successfully!');
   } catch (error) {
-    console.error('Test error:', error);
+    console.error('Login test failed:', error);
   }
-}
+};
 
 testLogin();

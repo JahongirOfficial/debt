@@ -1,13 +1,11 @@
 /**
  * Migration utility to move localStorage data to MongoDB
  */
+import { apiFetch } from './api'; // Import the api utility
 
 // Function to migrate debts from localStorage to MongoDB
 export const migrateDebts = async (token) => {
   try {
-    // Use default backend port
-    const backendPort = 5000;
-
     // Get debts from localStorage
     const storedDebts = localStorage.getItem('qarzdaftar_debts');
     if (!storedDebts) {
@@ -20,7 +18,7 @@ export const migrateDebts = async (token) => {
     }
     
     // Send debts to backend for migration
-    const response = await fetch(`http://localhost:${backendPort}/api/migrate`, {
+    const response = await apiFetch('/migrate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

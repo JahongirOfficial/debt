@@ -1,26 +1,38 @@
-// Using built-in fetch API (Node.js 18+)
-async function testRegistration() {
+// Test registration with the production API
+const testRegistration = async () => {
   try {
-    // Use default port 5000 for testing
-    const backendPort = 5000;
+    // Use production API URL
+    const apiUrl = 'https://debt-tracker.prox.uz/api';
     
-    const response = await fetch(`http://localhost:${backendPort}/api/auth/register`, {
+    // Registration data
+    const registerData = {
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'password123'
+    };
+
+    // Register user
+    console.log('Registering user...');
+    const registerResponse = await fetch(`${apiUrl}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        username: 'testuser',
-        email: 'test@example.com',
-        password: 'password123'
-      }),
+      body: JSON.stringify(registerData),
     });
 
-    const data = await response.json();
-    console.log('Registration response:', data);
+    const registerResult = await registerResponse.json();
+    console.log('Registration result:', registerResult);
+
+    if (!registerResult.success) {
+      console.error('Registration failed:', registerResult.message);
+      return;
+    }
+
+    console.log('\nRegistration test completed successfully!');
   } catch (error) {
-    console.error('Error during registration test:', error);
+    console.error('Registration test failed:', error);
   }
-}
+};
 
 testRegistration();

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { apiFetch } from './api'; // Import the api utility
 
 // Create the context
 const AuthContext = createContext();
@@ -12,14 +13,13 @@ export const AuthProvider = ({ children }) => {
     currency: 'UZS',
     theme: 'light'
   });
-  const [backendPort] = useState(5000); // Default port
   const [backendAvailable, setBackendAvailable] = useState(true); // Track backend availability
 
   // Check if backend is available
   useEffect(() => {
     const checkBackendAvailability = async () => {
       try {
-        const response = await fetch(`http://localhost:${backendPort}/api/health`, {
+        const response = await apiFetch('/health', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -38,12 +38,12 @@ export const AuthProvider = ({ children }) => {
     };
     
     checkBackendAvailability();
-  }, [backendPort]);
+  }, []);
 
   // Verify token with backend
   const verifyToken = async (token) => {
     try {
-      const response = await fetch(`http://localhost:${backendPort}/api/profile`, {
+      const response = await apiFetch('/profile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
   // Fetch user settings from backend
   const fetchUserSettings = async (token, userData) => {
     try {
-      const response = await fetch(`http://localhost:${backendPort}/api/settings`, {
+      const response = await apiFetch('/settings', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:${backendPort}/api/settings`, {
+      const response = await apiFetch('/settings', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -199,7 +199,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
-      const response = await fetch(`http://localhost:${backendPort}/api/auth/login`, {
+      const response = await apiFetch('/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
-      const response = await fetch(`http://localhost:${backendPort}/api/auth/register`, {
+      const response = await apiFetch('/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
