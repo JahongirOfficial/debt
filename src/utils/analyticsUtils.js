@@ -55,7 +55,7 @@ export const calculateUserRating = (creditor, debts) => {
 };
 
 // Function to get analytics data
-export const getAnalyticsData = (debts, analyticsPeriod) => {
+export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) => {
   const now = new Date();
   const periodStart = new Date();
   
@@ -83,9 +83,17 @@ export const getAnalyticsData = (debts, analyticsPeriod) => {
   const pendingAmount = periodDebts
     .filter(debt => debt.status === 'pending')
     .reduce((sum, debt) => sum + debt.amount, 0);
-  const paidAmount = periodDebts
+  
+  // Calculate paid amount including debt adjustments
+  const directlyPaidAmount = periodDebts
     .filter(debt => debt.status === 'paid')
     .reduce((sum, debt) => sum + debt.amount, 0);
+  
+  const adjustmentAmount = debtAdjustments
+    .filter(adjustment => new Date(adjustment.createdAt) >= periodStart)
+    .reduce((sum, adjustment) => sum + adjustment.adjustmentAmount, 0);
+  
+  const paidAmount = directlyPaidAmount + adjustmentAmount;
   
   // Top creditors
   const creditorStats = {};
@@ -101,6 +109,16 @@ export const getAnalyticsData = (debts, analyticsPeriod) => {
       creditorStats[debt.creditor].paid += debt.amount;
     }
   });
+  
+  // Add adjustment amounts to creditor stats
+  debtAdjustments
+    .filter(adjustment => new Date(adjustment.createdAt) >= periodStart)
+    .forEach(adjustment => {
+      if (!creditorStats[adjustment.creditor]) {
+        creditorStats[adjustment.creditor] = { total: 0, pending: 0, paid: 0, count: 0 };
+      }
+      creditorStats[adjustment.creditor].paid += adjustment.adjustmentAmount;
+    });
   
   const topCreditors = Object.entries(creditorStats)
     .map(([name, stats]) => ({ name, ...stats }))
@@ -121,6 +139,17 @@ export const getAnalyticsData = (debts, analyticsPeriod) => {
       monthlyData[month].paid += debt.amount;
     }
   });
+  
+  // Add adjustment amounts to monthly trends
+  debtAdjustments
+    .filter(adjustment => new Date(adjustment.createdAt) >= periodStart)
+    .forEach(adjustment => {
+      const month = new Date(adjustment.createdAt).toISOString().slice(0, 7);
+      if (!monthlyData[month]) {
+        monthlyData[month] = { pending: 0, paid: 0, count: 0 };
+      }
+      monthlyData[month].paid += adjustment.adjustmentAmount;
+    });
   
   const monthlyTrends = Object.entries(monthlyData)
     .map(([month, data]) => ({ month, ...data }))
@@ -148,6 +177,7 @@ export const getAnalyticsData = (debts, analyticsPeriod) => {
     topCreditors,
     monthlyTrends,
     avgPaymentDays,
-    paymentSpeeds
+    paymentSpeeds,
+    adjustmentAmount // Include adjustment amount in the returned data
   };
 };

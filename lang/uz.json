@@ -219,7 +219,9 @@
     "noCreditorsData": "Kreditor ma'lumotlari yo'q",
     "debtsCount": "ta qarz",
     "pending": "Kutilayotgan",
-    "paid": "To'langan"
+    "paid": "To'langan",
+    "adjustmentAmount": "Tahrirlab ayrilgan:",
+    "directlyPaid": "To'g'ridan-to'g'ri to'langan:"
   },
   "reports": {
     "title": "Hisobotlar",

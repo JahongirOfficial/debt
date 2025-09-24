@@ -219,7 +219,9 @@
     "noCreditorsData": "Нет данных о кредиторах",
     "debtsCount": "долгов",
     "pending": "В ожидании",
-    "paid": "Оплачено"
+    "paid": "Оплачено",
+    "adjustmentAmount": "Уменьшено при редактировании:",
+    "directlyPaid": "Напрямую оплачено:"
   },
   "reports": {
     "title": "Отчеты",

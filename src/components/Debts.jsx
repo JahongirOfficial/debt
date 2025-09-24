@@ -14,7 +14,7 @@ export function QarzdaftarDebts() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(null);
   const [editingDebt, setEditingDebt] = useState(null); // For tracking which debt is being edited
-  const [editForm, setEditForm] = useState({ amount: '', phone: '' }); // For edit form data
+  const [editForm, setEditForm] = useState({ amount: '', phone: '', countryCode: '+998' }); // For edit form data
   
   const [activeTab, setActiveTab] = useState('dueToday'); // 'dueToday', 'pending', 'paid', 'all', 'threeDaysLeft', 'overdue'
   const [newDebt, setNewDebt] = useState({ creditor: '', amount: '', description: '', phone: '', countryCode: '+998', debtDate: new Date().toISOString().split('T')[0] });
@@ -303,11 +303,85 @@ export function QarzdaftarDebts() {
 
   // Function to start editing a debt
   const startEditing = (debt) => {
-    setEditingDebt(debt._id);
+    setEditingDebt(debt);
     setEditForm({
       amount: formatNumberWithSpaces(debt.amount.toString()),
-      phone: debt.phone || '+998 '
+      phone: debt.phone || '',
+      countryCode: debt.countryCode || '+998'
     });
+  };
+
+  // Function to handle edit form changes
+  const handleEditFormChange = (field, value) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Function to handle edit phone change
+  const handleEditPhoneChange = (e) => {
+    const inputValue = e.target.value;
+    const currentCountryCode = editForm.countryCode;
+    
+    // Remove all non-digit characters
+    const digitsOnly = inputValue.replace(/\D/g, '');
+    
+    // Format based on country
+    let formattedNumber = '';
+    let maxDigits = 9;
+    
+    if (currentCountryCode === '+998') { // Uzbekistan
+      maxDigits = 9;
+      const limitedDigits = digitsOnly.slice(0, maxDigits);
+      if (limitedDigits.length > 0) {
+        formattedNumber += limitedDigits.slice(0, 2);
+        if (limitedDigits.length > 2) formattedNumber += ' ' + limitedDigits.slice(2, 5);
+        if (limitedDigits.length > 5) formattedNumber += ' ' + limitedDigits.slice(5, 7);
+        if (limitedDigits.length > 7) formattedNumber += ' ' + limitedDigits.slice(7, 9);
+      }
+    } else if (currentCountryCode === '+7' || currentCountryCode === '+77') { // Russia/Kazakhstan
+      maxDigits = 10;
+      const limitedDigits = digitsOnly.slice(0, maxDigits);
+      if (limitedDigits.length > 0) {
+        formattedNumber += limitedDigits.slice(0, 3);
+        if (limitedDigits.length > 3) formattedNumber += ' ' + limitedDigits.slice(3, 6);
+        if (limitedDigits.length > 6) formattedNumber += ' ' + limitedDigits.slice(6, 8);
+        if (limitedDigits.length > 8) formattedNumber += ' ' + limitedDigits.slice(8, 10);
+      }
+    } else if (currentCountryCode === '+992') { // Tajikistan
+      maxDigits = 9;
+      const limitedDigits = digitsOnly.slice(0, maxDigits);
+      if (limitedDigits.length > 0) {
+        formattedNumber += limitedDigits.slice(0, 2);
+        if (limitedDigits.length > 2) formattedNumber += ' ' + limitedDigits.slice(2, 5);
+        if (limitedDigits.length > 5) formattedNumber += ' ' + limitedDigits.slice(5, 7);
+        if (limitedDigits.length > 7) formattedNumber += ' ' + limitedDigits.slice(7, 9);
+      }
+    } else { // Other countries (US, UK)
+      maxDigits = 10;
+      const limitedDigits = digitsOnly.slice(0, maxDigits);
+      if (limitedDigits.length > 0) {
+        formattedNumber += limitedDigits.slice(0, 3);
+        if (limitedDigits.length > 3) formattedNumber += ' ' + limitedDigits.slice(3, 6);
+        if (limitedDigits.length > 6) formattedNumber += ' ' + limitedDigits.slice(6, 10);
+      }
+    }
+    
+    setEditForm({...editForm, phone: formattedNumber});
+  };
+
+  // Function to handle edit country code change
+  const handleEditCountryCodeChange = (newCountryCode) => {
+    setEditForm({...editForm, countryCode: newCountryCode, phone: ''});
+  };
+
+  // Function to handle edit amount change
+  const handleEditAmountChange = (e) => {
+    const inputValue = e.target.value;
+    // Format the input value with spaces
+    const formattedValue = formatNumberWithSpaces(inputValue);
+    setEditForm({...editForm, amount: formattedValue});
   };
 
   // Function to save edited debt
@@ -316,14 +390,15 @@ export function QarzdaftarDebts() {
     
     const updateData = {
       amount: parseFormattedNumber(editForm.amount),
-      phone: editForm.phone
+      phone: editForm.phone,
+      countryCode: editForm.countryCode
     };
     
-    const result = await updateDebt(editingDebt, updateData);
+    const result = await updateDebt(editingDebt._id, updateData);
     
     if (result.success) {
       setEditingDebt(null);
-      setEditForm({ amount: '', phone: '' });
+      setEditForm({ amount: '', phone: '', countryCode: '+998' });
     } else {
       console.error('Failed to update debt:', result.message);
     }
@@ -332,8 +407,32 @@ export function QarzdaftarDebts() {
   // Function to cancel editing
   const cancelEdit = () => {
     setEditingDebt(null);
-    setEditForm({ amount: '', phone: '' });
+    setEditForm({ amount: '', phone: '', countryCode: '+998' });
   };
+
+  // Handle backdrop click for Edit modal
+  const handleEditModalBackdropClick = (e) => {
+    if (e.target.id === 'edit-modal-backdrop') {
+      cancelEdit();
+    }
+  };
+
+  // Handle ESC key press for Edit modal
+  React.useEffect(() => {
+    const handleEscKey = (e) => {
+      if (editingDebt && e.key === 'Escape') {
+        cancelEdit();
+      }
+    };
+
+    if (editingDebt) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [editingDebt]);
 
   // Show loading state
   if (loading) {
@@ -563,6 +662,15 @@ export function QarzdaftarDebts() {
                       </button>
                       {debt.status === 'pending' && (
                         <>
+                          <button
+                            onClick={() => startEditing(debt)}
+                            className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            title={t('common.edit', 'Tahrirlash')}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
                           <button
                             onClick={async () => {
                               const result = await markAsPaidHandler(debt._id);
@@ -891,6 +999,111 @@ export function QarzdaftarDebts() {
                 >
                   {t('common.delete', 'O\'chirish')}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Debt Modal */}
+      {editingDebt && (
+        <div 
+          id="edit-modal-backdrop"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleEditModalBackdropClick}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+                  {t('debts.editDebt', 'Qarzni tahrirlash')}
+                </h3>
+                <button 
+                  onClick={cancelEdit}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('debts.form.creditor', 'Kreditor')}
+                  </label>
+                  <input
+                    type="text"
+                    value={editingDebt.creditor}
+                    disabled
+                    className="w-full p-3 rounded-lg border border-gray-300 bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('debts.form.amount', 'Miqdori')}
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.amount}
+                    onChange={handleEditAmountChange}
+                    className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={t('debts.form.amountPlaceholder', 'Miqdorni kiriting')}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('debts.form.countryCode', 'Mamlakat kodi')}
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {countryCodes.map((country) => (
+                      <button
+                        key={country.code}
+                        type="button"
+                        onClick={() => handleEditCountryCodeChange(country.code)}
+                        className={`p-2 rounded-lg border flex items-center justify-center text-sm ${
+                          editForm.countryCode === country.code
+                            ? 'border-orange-500 bg-orange-100 dark:bg-orange-900 dark:border-orange-500'
+                            : 'border-gray-300 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <span className="mr-1">{country.flag}</span>
+                        <span>{country.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('debts.form.phone', 'Telefon')}
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.phone}
+                    onChange={handleEditPhoneChange}
+                    className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder={t('debts.form.phonePlaceholder', 'Telefon raqamini kiriting')}
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={cancelEdit}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  >
+                    {t('common.cancel', 'Bekor qilish')}
+                  </button>
+                  <button
+                    onClick={saveEdit}
+                    className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-lg shadow transition-all"
+                  >
+                    {t('common.save', 'Saqlash')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

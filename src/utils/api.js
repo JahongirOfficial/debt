@@ -6,7 +6,8 @@ const getApiBaseUrl = () => {
     return 'https://debt-tracker.prox.uz/api';
   }
   // In development, use localhost with the appropriate port
-  const backendPort = import.meta.env.VITE_BACKEND_PORT || 5001;
+  // Changed from 5001 to 5002 to match the backend server port
+  const backendPort = import.meta.env.VITE_BACKEND_PORT || 5002;
   return `http://localhost:${backendPort}/api`;
 };
 

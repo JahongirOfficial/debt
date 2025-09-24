@@ -219,7 +219,9 @@
     "noCreditorsData": "No creditors data available",
     "debtsCount": "debts",
     "pending": "Pending",
-    "paid": "Paid"
+    "paid": "Paid",
+    "adjustmentAmount": "Reduced through editing:",
+    "directlyPaid": "Directly paid:"
   },
   "reports": {
     "title": "Reports",

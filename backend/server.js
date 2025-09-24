@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5002;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/qarzdaftar';
 
 // Middleware
@@ -217,6 +217,51 @@ try {
   UserSettings = mongoose.model('UserSettings', userSettingsSchema);
 } catch (error) {
   UserSettings = mongoose.model('UserSettings');
+}
+
+// Debt Adjustment Schema (MongoDB ulangan bo'lsa)
+// For tracking amount reductions that should count as payments
+const debtAdjustmentSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  debtId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Debt',
+    required: true,
+    index: true
+  },
+  originalAmount: {
+    type: Number,
+    required: true
+  },
+  newAmount: {
+    type: Number,
+    required: true
+  },
+  adjustmentAmount: {
+    type: Number,
+    required: true
+  },
+  creditor: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  }
+}, {
+  timestamps: true
+});
+
+// DebtAdjustment model (MongoDB ulangan bo'lsa)
+let DebtAdjustment;
+try {
+  DebtAdjustment = mongoose.model('DebtAdjustment', debtAdjustmentSchema);
+} catch (error) {
+  DebtAdjustment = mongoose.model('DebtAdjustment');
 }
 
 // Creditor Rating Schema (MongoDB ulangan bo'lsa)
@@ -762,12 +807,46 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
   try {
     const { amount, phone, countryCode, description } = req.body;
     
+    // Avvalgi qarzni olish
+    const existingDebt = await Debt.findOne({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    
+    if (!existingDebt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
     // Yangilash obyektini yaratish
     const update = {};
-    if (amount !== undefined) update.amount = amount;
     if (phone !== undefined) update.phone = phone;
     if (countryCode !== undefined) update.countryCode = countryCode;
     if (description !== undefined) update.description = description;
+    
+    // Agar miqdor o'zgartirilgan bo'lsa
+    if (amount !== undefined) {
+      update.amount = amount;
+      
+      // Agar yangi miqdor avvalgisidan kam bo'lsa, farqni to'langan sifatida hisoblash
+      if (amount < existingDebt.amount) {
+        const adjustmentAmount = existingDebt.amount - amount;
+        
+        // DebtAdjustment yozuvini yaratish
+        const debtAdjustment = new DebtAdjustment({
+          userId: req.user.userId,
+          debtId: req.params.id,
+          originalAmount: existingDebt.amount,
+          newAmount: amount,
+          adjustmentAmount: adjustmentAmount,
+          creditor: existingDebt.creditor
+        });
+        
+        await debtAdjustment.save();
+      }
+    }
     
     // Qarzni yangilash
     const debt = await Debt.findOneAndUpdate(
@@ -880,6 +959,169 @@ app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Server error marking debt as paid' 
+    });
+  }
+});
+
+// Qarz tuzatishlarini olish
+app.get('/api/debt-adjustments', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      adjustments: []
+    });
+  }
+  
+  try {
+    const adjustments = await DebtAdjustment.find({
+      userId: req.user.userId
+    }).sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      adjustments
+    });
+  } catch (error) {
+    console.error('Get debt adjustments error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching debt adjustments' 
+    });
+  }
+});
+
+// Creditor ratings olish
+app.get('/api/ratings', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      ratings: []
+    });
+  }
+  
+  try {
+    const ratings = await CreditorRating.find({
+      userId: req.user.userId
+    }).sort({ ratingScore: -1 });
+    
+    res.json({
+      success: true,
+      ratings
+    });
+  } catch (error) {
+    console.error('Get ratings error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching ratings' 
+    });
+  }
+});
+
+// Creditor ratings hisoblash
+app.post('/api/ratings/calculate', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Ratings calculated successfully (test mode)'
+    });
+  }
+  
+  try {
+    // Foydalanuvchining barcha qarzlarini olish
+    const userDebts = await Debt.find({ userId: req.user.userId });
+    
+    // Kreditorlar bo'yicha statistikani to'plash
+    const creditorStats = {};
+    
+    userDebts.forEach(debt => {
+      if (!creditorStats[debt.creditor]) {
+        creditorStats[debt.creditor] = {
+          totalDebts: 0,
+          paidDebts: 0,
+          pendingDebts: 0,
+          totalAmount: 0,
+          paidAmount: 0,
+          delays: []
+        };
+      }
+      
+      creditorStats[debt.creditor].totalDebts += 1;
+      creditorStats[debt.creditor].totalAmount += debt.amount;
+      
+      if (debt.status === 'paid') {
+        creditorStats[debt.creditor].paidDebts += 1;
+        creditorStats[debt.creditor].paidAmount += debt.amount;
+        
+        // To'lov kechikishini hisoblash
+        if (debt.paidAt && debt.debtDate) {
+          const debtDate = new Date(debt.debtDate);
+          const paidDate = new Date(debt.paidAt);
+          const delay = Math.max(0, (paidDate - debtDate) / (1000 * 60 * 60 * 24));
+          creditorStats[debt.creditor].delays.push(delay);
+        }
+      } else {
+        creditorStats[debt.creditor].pendingDebts += 1;
+      }
+    });
+    
+    // Reytinglarni hisoblash va yangilash
+    for (const creditor in creditorStats) {
+      const stats = creditorStats[creditor];
+      
+      // To'lov foizi
+      const paymentRate = stats.totalDebts > 0 ? (stats.paidDebts / stats.totalDebts) * 100 : 0;
+      
+      // O'rtacha kechikish
+      const averageDelay = stats.delays.length > 0 
+        ? stats.delays.reduce((sum, delay) => sum + delay, 0) / stats.delays.length 
+        : 0;
+      
+      // Reyting ballini hisoblash
+      let ratingScore = 0;
+      let ratingStatus = 'unknown';
+      
+      if (paymentRate >= 90 && averageDelay <= 1) {
+        ratingScore = Math.min(100, 90 + (10 - Math.min(10, averageDelay)));
+        ratingStatus = 'excellent';
+      } else if (paymentRate >= 70 && averageDelay <= 7) {
+        ratingScore = Math.min(100, 70 + (20 - Math.min(20, averageDelay * 2)));
+        ratingStatus = 'good';
+      } else if (paymentRate >= 50) {
+        ratingScore = Math.min(100, 50 + (20 - Math.min(20, averageDelay * 2)));
+        ratingStatus = 'fair';
+      } else if (stats.totalDebts > 0) {
+        ratingScore = Math.max(0, paymentRate - (averageDelay / 2));
+        ratingStatus = 'poor';
+      }
+      
+      // Kreditor reytingini yangilash yoki yaratish
+      await CreditorRating.findOneAndUpdate(
+        { userId: req.user.userId, creditor: creditor },
+        {
+          ratingScore: Math.round(ratingScore),
+          ratingStatus,
+          totalDebts: stats.totalDebts,
+          paidDebts: stats.paidDebts,
+          pendingDebts: stats.pendingDebts,
+          averageDelay: Math.round(averageDelay * 10) / 10,
+          lastUpdated: new Date()
+        },
+        { upsert: true, new: true }
+      );
+    }
+    
+    res.json({
+      success: true,
+      message: 'Ratings calculated successfully'
+    });
+  } catch (error) {
+    console.error('Calculate ratings error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error calculating ratings' 
     });
   }
 });
