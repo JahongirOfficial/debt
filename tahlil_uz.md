@@ -1,4 +1,4 @@
-# Qarzdaftar (Qarz Boshqarish) Ilovasi Uchun MongoDB Migratsiya Rejasi
+#1 Qarzdaftar (Qarz Boshqarish) Ilovasi Uchun MongoDB Migratsiya Rejasi
 
 ## 1. Joriy Tizim Tahlili
 
