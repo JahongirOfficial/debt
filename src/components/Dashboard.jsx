@@ -20,7 +20,6 @@ export function QarzdaftarDashboard() {
           <div className="h-5 w-64 bg-gray-200 rounded animate-pulse"></div>
         </div>
         <SkeletonLoader type="dashboardStats" />
-        <SkeletonLoader type="dashboardActivity" />
       </div>
     );
   }
@@ -48,14 +47,7 @@ export function QarzdaftarDashboard() {
   const paidDebtsCount = paidDebts.length;
   const totalDebtsCount = debts.length;
   
-  // Get paid amount trend data (last 7 days)
-  const paidTrendData = debts
-    .filter(debt => debt.status === 'paid')
-    .slice(-7)
-    .map(debt => ({
-      date: debt.paidAt || debt.updatedAt || debt.createdAt,
-      amount: debt.amount
-    }));
+  // Get paid amount trend data (last 7 days) - REMOVED as per user request
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -108,53 +100,6 @@ export function QarzdaftarDashboard() {
           </div>
         </div>
       </div>
-      
-      {/* Paid Amount Trend Visualization */}
-      <div className="backdrop-blur-lg bg-white/30 border border-white/20 rounded-2xl p-6 shadow-xl mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">{t('dashboard.totalPaid', 'To\'langan summa')}</h3>
-          <span className="text-sm text-gray-500">{t('dashboard.last7Days', 'Oxirgi 7 kun')}</span>
-        </div>
-        
-        {paidTrendData.length > 0 ? (
-          <div className="flex items-end justify-between h-32 gap-2 mt-6">
-            {paidTrendData.map((item, index) => {
-              // Calculate bar height based on amount (max height is 100px)
-              const maxAmount = Math.max(...paidTrendData.map(d => d.amount), 1);
-              const barHeight = maxAmount > 0 ? (item.amount / maxAmount) * 100 : 0;
-              
-              // Format date for display
-              const date = new Date(item.date);
-              const day = date.toLocaleDateString('uz-UZ', { day: 'numeric' });
-              const weekday = date.toLocaleDateString('uz-UZ', { weekday: 'short' });
-              
-              return (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  <div className="flex flex-col items-center w-full">
-                    <div 
-                      className="w-full bg-gradient-to-t from-green-500 to-emerald-400 rounded-t-md transition-all duration-300 hover:opacity-75"
-                      style={{ height: `${barHeight}%`, minHeight: barHeight > 0 ? '4px' : '0px' }}
-                    ></div>
-                    <div className="mt-2 text-center">
-                      <div className="text-xs font-medium text-gray-700">{day}</div>
-                      <div className="text-xs text-gray-500">{weekday}</div>
-                    </div>
-                  </div>
-                  <div className="mt-1 text-xs font-semibold text-gray-800">
-                    {formatCurrency(item.amount, currency, language)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="h-32 flex items-center justify-center">
-            <p className="text-gray-500">{t('dashboard.noPaidData', 'To\'langan qarzlar mavjud emas')}</p>
-          </div>
-        )}
-      </div>
-      
-
       
       {/* Recent Activity */}
       <div className="backdrop-blur-lg bg-white/30 border border-white/20 rounded-2xl p-6 shadow-xl">

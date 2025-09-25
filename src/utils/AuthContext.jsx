@@ -180,22 +180,35 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (email, password) => {
-    // If backend is not available, simulate login
+    // If backend is not available, simulate login with credential validation
     if (!backendAvailable) {
-      // Create a mock user
-      const mockUser = {
-        id: 'mock-user-id',
-        username: email.split('@')[0],
-        email: email,
-        subscriptionTier: 'free',
-        avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
-      };
+      // In test mode, we still want to validate credentials
+      // For demo purposes, we'll accept any non-empty email and password
+      if (!email || !password) {
+        return { success: false, message: 'Email and password are required' };
+      }
       
-      localStorage.setItem('token', 'mock-token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      
-      return { success: true };
+      // For demo purposes, we'll accept a specific test account
+      // In a real application, you would implement proper validation
+      if (email === 'test@example.com' && password === 'password123') {
+        // Create a mock user for the test account
+        const mockUser = {
+          id: 'test-user-id',
+          username: 'testuser',
+          email: 'test@example.com',
+          subscriptionTier: 'free',
+          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+        };
+        
+        localStorage.setItem('token', 'test-token');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        
+        return { success: true };
+      } else {
+        // Invalid credentials
+        return { success: false, message: 'Invalid credentials' };
+      }
     }
     
     try {
@@ -229,22 +242,37 @@ export const AuthProvider = ({ children }) => {
 
   // Register function
   const register = async (username, email, password) => {
-    // If backend is not available, simulate registration
+    // If backend is not available, simulate registration with validation
     if (!backendAvailable) {
-      // Create a mock user
-      const mockUser = {
-        id: 'mock-user-id',
-        username: username,
-        email: email,
-        subscriptionTier: 'free',
-        avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
-      };
+      // Validate input
+      if (!username || !email || !password) {
+        return { success: false, message: 'All fields are required' };
+      }
       
-      localStorage.setItem('token', 'mock-token');
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (password.length < 6) {
+        return { success: false, message: 'Password must be at least 6 characters long' };
+      }
       
-      return { success: true };
+      // For demo purposes, we'll accept a specific test account
+      if (email === 'test@example.com' && username === 'testuser' && password === 'password123') {
+        // Create a mock user for the test account
+        const mockUser = {
+          id: 'test-user-id',
+          username: 'testuser',
+          email: 'test@example.com',
+          subscriptionTier: 'free',
+          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+        };
+        
+        localStorage.setItem('token', 'test-token');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        setUser(mockUser);
+        
+        return { success: true };
+      } else {
+        // Don't allow registration of other accounts in test mode
+        return { success: false, message: 'Registration is disabled in test mode. Use test@example.com / password123 to login.' };
+      }
     }
     
     try {

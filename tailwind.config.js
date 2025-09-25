@@ -7,7 +7,12 @@ export default {
   ],
   darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        'xs': '475px',
+        // => @media (min-width: 475px) { ... }
+      }
+    },
   },
   plugins: [],
 }

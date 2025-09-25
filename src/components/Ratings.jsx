@@ -112,7 +112,13 @@ export function QarzdaftarRatings() {
   // Calculate ratings on component mount
   useEffect(() => {
     if (initialLoad && !loading) {
-      calculateRatings().then(() => {
+      calculateRatings().then((result) => {
+        if (!result.success) {
+          console.error('Failed to calculate ratings:', result.message);
+        }
+        setInitialLoad(false);
+      }).catch((error) => {
+        console.error('Error calculating ratings:', error);
         setInitialLoad(false);
       });
     }
@@ -263,6 +269,7 @@ export function QarzdaftarRatings() {
             </svg>
             <p className={isDarkMode ? 'text-gray-300 text-lg' : 'text-gray-600 text-lg'}>{t('ratings.noRatings', 'Hali reytinglar yo\'q')}</p>
             <p className={`text-sm mt-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{t('ratings.addDebtsToSeeRatings', 'Qarzlar qo\'shish orqali reytinglarni ko\'ring')}</p>
+            <p className={`text-xs mt-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('ratings.ifIssuePersists', 'Agar muammo davom etsa, tizim administratori bilan bog\'laning')}</p>
           </div>
         </div>
       ) : filteredRatings.length === 0 ? (

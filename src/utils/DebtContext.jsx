@@ -61,9 +61,13 @@ export const DebtProvider = ({ children }) => {
         setRatings(data.ratings);
       } else {
         console.error('Failed to fetch ratings:', data.message);
+        // Set empty array if fetch fails
+        setRatings([]);
       }
     } catch (err) {
       console.error('Fetch ratings error:', err);
+      // Set empty array if fetch fails
+      setRatings([]);
     }
   };
 
@@ -88,6 +92,7 @@ export const DebtProvider = ({ children }) => {
         await fetchRatings();
         return { success: true };
       } else {
+        console.error('Failed to calculate ratings:', data.message);
         return { success: false, message: data.message };
       }
     } catch (err) {

@@ -205,48 +205,43 @@ export function QarzdaftarApp() {
         {/* Feedback/Suggestion Button - moved to right side */}
         <button
           onClick={handleFeedbackClick}
-          className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 group ${
+          className={`fixed bottom-6 right-6 z-40 p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 group md:p-4 sm:p-2 xs:p-1 ${
             settings.theme === 'dark' 
               ? 'bg-blue-500 hover:bg-blue-600' 
               : 'bg-cyan-500 hover:bg-cyan-600'
           } text-white`}
           title={t('feedback.suggestion', 'Taklifingiz bormi?')}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 md:h-6 md:w-6 sm:h-4 sm:w-4 xs:h-3 xs:w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
         </button>
 
         {/* Feedback Message - adjusted position for right alignment */}
         {showFeedbackMessage && (
-          <div className="fixed bottom-24 right-6 z-50 bg-white dark:bg-gray-800 text-gray-800 dark:text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in-out">
-            <p className="font-medium">Taklifingiz bormi?</p>
+          <div className="fixed bottom-24 right-6 z-50 bg-white dark:bg-gray-800 text-gray-800 dark:text-white px-4 py-2 rounded-lg shadow-lg animate-fade-in-out md:px-4 md:py-2 md:text-base sm:px-1 sm:py-0.5 sm:text-xs xs:px-0.5 xs:py-0 xs:text-xs">
+            <p className="font-medium md:text-base sm:text-xs xs:text-xs">Taklifingiz bormi?</p>
           </div>
         )}
 
-        {/* Permanent Close Button - Visible only on mobile when sidebar is open */}
-        {activeSection === 'mobile-menu' && (
-          <button 
-            className="md:hidden fixed top-4 right-4 z-20 w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-gray-800 rounded-full shadow-lg translate-x-20 translate-y-10"
-            onClick={() => setActiveSection('debts')}
-          >
+        {/* Mobile Menu Toggle Button - Standard and professional implementation */}
+        <button 
+          className="md:hidden fixed top-4 right-4 z-20 w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-gray-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+          onClick={() => setActiveSection(activeSection === 'mobile-menu' ? 'debts' : 'mobile-menu')}
+          aria-label={activeSection === 'mobile-menu' ? 'Close menu' : 'Open menu'}
+        >
+          {activeSection === 'mobile-menu' ? (
+            // Close icon (X)
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </button>
-        )}
-
-        {/* Permanent Open Button - Visible only on mobile when sidebar is closed */}
-        {activeSection !== 'mobile-menu' && (
-          <button 
-            className="md:hidden fixed top-4 right-4 z-20 w-12 h-12 flex items-center justify-center bg-white/80 dark:bg-gray-800 rounded-full shadow-lg translate-x-7 translate-y-11"
-            onClick={() => setActiveSection('mobile-menu')}
-          >
+          ) : (
+            // Hamburger menu icon
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </button>
-        )}
+          )}
+        </button>
 
         {/* Mobile Offcanvas Sidebar - Slides in from right on mobile */}
         <div className={`md:hidden fixed inset-0 z-30 transition-opacity duration-300 ease-in-out ${activeSection === 'mobile-menu' ? 'opacity-100 visible' : 'opacity-0 invisible'}`}>

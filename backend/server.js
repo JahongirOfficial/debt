@@ -448,18 +448,38 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   // MongoDB ulanmagan bo'lsa test javob qaytarish
   if (!mongoose.connection.readyState) {
-    return res.json({
-      success: true,
-      message: 'Login successful (test mode)',
-      token: 'test-token',
-      user: {
-        id: 'test-user-id',
-        username: req.body.email?.split('@')[0] || 'testuser',
-        email: req.body.email || 'test@example.com',
-        subscriptionTier: 'free',
-        avatarColor: generateRandomAvatarColor()
-      }
-    });
+    const { email, password } = req.body;
+    
+    // Validatsiya
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and password are required' 
+      });
+    }
+    
+    // Test mode authentication
+    // Only allow the predefined test account
+    if (email === 'test@example.com' && password === 'password123') {
+      return res.json({
+        success: true,
+        message: 'Login successful (test mode)',
+        token: 'test-token',
+        user: {
+          id: 'test-user-id',
+          username: 'testuser',
+          email: 'test@example.com',
+          subscriptionTier: 'free',
+          avatarColor: generateRandomAvatarColor()
+        }
+      });
+    } else {
+      // Invalid credentials in test mode
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid credentials' 
+      });
+    }
   }
   
   try {
@@ -997,7 +1017,36 @@ app.get('/api/ratings', authenticateToken, async (req, res) => {
   if (!mongoose.connection.readyState) {
     return res.json({
       success: true,
-      ratings: []
+      ratings: [
+        {
+          _id: 'test-rating-1',
+          userId: 'test-user-id',
+          creditor: 'Test Creditor 1',
+          ratingScore: 95,
+          ratingStatus: 'excellent',
+          totalDebts: 5,
+          paidDebts: 5,
+          pendingDebts: 0,
+          averageDelay: 0,
+          lastUpdated: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          _id: 'test-rating-2',
+          userId: 'test-user-id',
+          creditor: 'Test Creditor 2',
+          ratingScore: 75,
+          ratingStatus: 'good',
+          totalDebts: 4,
+          paidDebts: 3,
+          pendingDebts: 1,
+          averageDelay: 2.5,
+          lastUpdated: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ]
     });
   }
   
@@ -1126,14 +1175,6 @@ app.post('/api/ratings/calculate', authenticateToken, async (req, res) => {
   }
 });
 
-// 404 handler for undefined routes
-app.use((req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: 'API endpoint not found' 
-  });
-});
-
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -1143,3 +1184,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+// 404 handler for undefined routes - This should be the last middleware
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: 'API endpoint not found' 
+  });
+});

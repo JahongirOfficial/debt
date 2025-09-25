@@ -191,6 +191,7 @@
     "days": "days",
     "noRatings": "No ratings yet",
     "addDebtsToSeeRatings": "Add debts to see ratings",
+    "ifIssuePersists": "If the issue persists, contact the system administrator",
     "noSearchResults": "No search results found",
     "searchResults": "results found"
   },

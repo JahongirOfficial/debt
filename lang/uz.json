@@ -24,7 +24,7 @@
     "tjs": "TJS"
   },
   "navigation": {
-    "dashboard": "Dashboard",
+    "dashboard": "Bosh menu",
     "debts": "Qarzlar",
     "calculator": "Kalkulyator",
     "ratings": "Reytinglar",
@@ -49,7 +49,7 @@
     "logoutSuccess": "Chiqish muvaffaqiyatli yakunlandi"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Bosh menu",
     "subtitle": "Qarzlar va moliyaviy ma'lumotlar",
     "welcome": "Xush kelibsiz",
     "totalDebts": "Jami qarzlar",
@@ -191,6 +191,7 @@
     "days": "kun",
     "noRatings": "Hali reytinglar yo'q",
     "addDebtsToSeeRatings": "Qarzlar qo'shish orqali reytinglarni ko'ring",
+    "ifIssuePersists": "Agar muammo davom etsa, tizim administratori bilan bog'laning",
     "noSearchResults": "Qidiruv natijasi topilmadi",
     "searchResults": "ta natija topildi"
   },
