@@ -188,7 +188,7 @@ export const DebtProvider = ({ children }) => {
   };
 
   // Delete a debt
-  const deleteDebt = async (id) => {
+  const deleteDebt = async (id, reason = '') => {
     if (!user) return { success: false, message: 'User not authenticated' };
     
     try {
@@ -199,6 +199,7 @@ export const DebtProvider = ({ children }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason }), // Pass reason in request body
       });
       
       const data = await response.json();
@@ -229,8 +230,34 @@ export const DebtProvider = ({ children }) => {
     }
   };
 
-  // Mark debt as paid
-  const markAsPaid = async (id) => {
+  // Fetch debt history
+  const fetchDebtHistory = async (debtId) => {
+    if (!user) return { success: false, message: 'User not authenticated' };
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`/debts/${debtId}/history`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        return { success: true, history: data.history };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (err) {
+      console.error('Fetch debt history error:', err);
+      return { success: false, message: 'Network error while fetching debt history' };
+    }
+  };
+
+  // Mark a debt as paid
+  const markDebtAsPaid = async (id, reason = '') => {
     if (!user) return { success: false, message: 'User not authenticated' };
     
     try {
@@ -241,6 +268,7 @@ export const DebtProvider = ({ children }) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ reason }), // Pass reason in request body
       });
       
       const data = await response.json();
@@ -296,7 +324,8 @@ export const DebtProvider = ({ children }) => {
     createDebt,
     updateDebt,
     deleteDebt,
-    markAsPaid
+    fetchDebtHistory,
+    markDebtAsPaid
   };
 
   return (

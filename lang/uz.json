@@ -21,7 +21,9 @@
     "usd": "USD",
     "eur": "EUR",
     "rub": "RUB",
-    "tjs": "TJS"
+    "tjs": "TJS",
+    "from": "dan",
+    "to": "ga"
   },
   "navigation": {
     "dashboard": "Bosh menu",
@@ -30,6 +32,7 @@
     "ratings": "Reytinglar",
     "analytics": "Analitika",
     "reports": "Hisobotlar",
+    "smsNotifications": "SMS Eslatmalar",
     "settings": "Sozlamalar"
   },
   "auth": {
@@ -121,13 +124,55 @@
       "amountPlaceholder": "Masalan: 1 000 000",
       "optional": "ixtiyoriy",
       "descriptionPlaceholder": "Qarz haqida qisqa ma'lumot",
+      "reasonPlaceholder": "Tahrirlash sababini kiriting",
       "phoneNote": "Raqamlar avtomatik formatlanadi",
       "markAsPaid": "To'langan deb belgilash",
       "debtId": "Qarz ID",
       "paidDate": "To'langan sana",
       "createdDate": "Yaratilgan sana",
-      "updatedDate": "Yangilangan sana"
-    }
+      "updatedDate": "Yangilangan sana",
+      "viewHistory": "Tarixni ko'rish",
+      "deleteReasonPrompt": "O'chirish sababini kiriting (ixtiyoriy):",
+      "payReasonPrompt": "To'lash sababini kiriting (ixtiyoriy):",
+      "reason": "Sabab"
+    },
+    "created": "Yaratilgan",
+    "updated": "Yangilangan",
+    "paid": "To'langan",
+    "deleted": "O'chirilgan",
+    "adjustment": "Tuzatish",
+    "debtHistory": "Qarz tarixi",
+    "noHistoryAvailable": "Tarix mavjud emas",
+    "historyWillBeCreated": "Qarzni tahrirlash yoki to'lash orqali tarix yaratiladi",
+    "amountChangedFrom": "Miqdor o'zgardi:",
+    "amountAdded": "qo'shildi",
+    "amountPaid": "to'landi",
+    "amountUnchanged": "Miqdor o'zgarmadi",
+    "added": "qo'shildi",
+    "paid": "to'landi",
+    "to": "ga",
+    "action": {
+      "created": "Yaratilgan",
+      "updated": "Yangilangan",
+      "paid": "To'langan",
+      "deleted": "O'chirilgan",
+      "adjustment": "To'lov"
+    },
+    "history": {
+      "createdDescription": "{{creditor}} uchun {{amount}} qarz yaratildi",
+      "amountIncreased": "{{amount}} qo'shildi",
+      "amountDecreased": "{{amount}} to'landi",
+      "amountPaid": "{{amount}} to'landi",
+      "amountUnchanged": "Qarz miqdori o'zgartirilmadi",
+      "markedAsPaid": "Qarz to'langan deb belgilandi",
+      "deleted": "Qarz o'chirildi"
+    },
+    "freeTierLimit": "Bepul tarifda faqat 10 ta qarz qo'shishingiz mumkin. Ko'proq qarz qo'shish uchun tarifni yangilang.",
+    "freeTierLimitTitle": "Qarzlar cheklangan",
+    "tierLimitReached": "Siz {{tier}} tarifidasiz va {{limit}} ta qarz qo'shdingiz. Ko'proq qarz qo'shish uchun tarifni yangilang.",
+    "tierLimitTitle": "Qarzlar cheklangan",
+    "upgradePrompt": "Tarifni yangilash funksiyasi tez orada qo'shiladi",
+    "upgradeNow": "Hoziroq yangilang"
   },
   "calculator": {
     "title": "Kalkulyator",
@@ -240,6 +285,93 @@
     "pendingDebtsReport": "Kutilayotgan Qarzlar Hisoboti",
     "paidDebtsReport": "To'langan Qarzlar Hisoboti",
     "generated": "Yaratilgan"
+  },
+  "smsNotifications": {
+    "title": "SMS Eslatmalar",
+    "subtitle": "SMS xabarlarini sozlash",
+    "disabledMessage": "SMS xabarlar yoqilmagan. Yoqish uchun yuqoridagi tugmani bosing.",
+    "settings": {
+      "title": "SMS Sozlamalari"
+    },
+    "provider": {
+      "title": "SMS Provayder"
+    },
+    "notifications": {
+      "title": "Xabar Turlari",
+      "dueReminder": "To'lov eslatmasi",
+      "dueReminderDescription": "Qarz muddati tugashidan oldin eslatish",
+      "paymentReceived": "To'lov qabul qilindi",
+      "paymentReceivedDescription": "Qarz to'langanda xabar berish"
+    },
+    "templates": {
+      "title": "SMS xabar shablonlarini boshqarish",
+      "dueReminder": "To'lov eslatmasi",
+      "paymentReceived": "To'lov qabul qilindi",
+      "availableVariables": "Mavjud o'zgaruvchilar:",
+      "dueReminderPlaceholder": "Hurmatli {{creditor}}, {{amount}} miqdordagi qarzingiz {{date}} sanasida tugaydi. Iltimos, o'z vaqtida to'lang.",
+      "paymentReceivedPlaceholder": "Hurmatli {{creditor}}, {{amount}} miqdordagi to'lovingiz qabul qilindi. Qolgan qarzingiz: {{remaining}}"
+    },
+    "reminders": {
+      "title": "Eslatma Sozlamalari",
+      "daysBefore": "Eslatma vaqti",
+      "days": "kun",
+      "time": "Yuborish vaqti"
+    },
+    "test": {
+      "title": "Test Xabar",
+      "send": "Test SMS yuborish",
+      "description": "SMS sozlamalari to'g'ri ishlashini tekshirish uchun test xabar yuboring"
+    },
+    "freeTier": {
+      "title": "SMS xizmati bepul tarifda cheklangan",
+      "description": "Siz bepul tarifdasiz. SMS xizmatidan foydalanish uchun standart yoki professional tarifga o'ting.",
+      "disabledMessage": "SMS xizmati bepul tarifda faolsiz. Faollashtirish uchun tarifni yangilang."
+    },
+    "activeTier": {
+      "title": "Siz {{tier}} tarifidasiz",
+      "description": "SMS xizmati faol. Bu oy uchun sizga {{limit}} SMS xabarnoma berish huquqi berilgan."
+    },
+    "traffic": {
+      "title": "SMS Trafigi",
+      "sms": "SMS",
+      "freeLimit": "Bepul tarifda oyiga 3 ta SMS yuborishingiz mumkin"
+    },
+    "usage": {
+      "title": "SMS Foydalanish",
+      "sent": "Yuborildi:",
+      "limit": "Limit:",
+      "remaining": "Qolgan SMS:"
+    },
+    "pricing": {
+      "title": "Tarif rejalari",
+      "month": "oyiga",
+      "currentPlan": "Joriy tarif",
+      "upgrade": "Tarifni yangilash",
+      "popular": "Eng ommabop",
+      "feature1": "3 ta SMS xabar",
+      "feature2": "Asosiy eslatmalar",
+      "feature3": "Telegram qo'llab-quvvatlash",
+      "feature4": "100 ta SMS xabar",
+      "feature5": "Kengaytirilgan eslatmalar",
+      "feature6": "Maxsus qo'llab-quvvatlash",
+      "feature7": "Hisobotlar",
+      "feature8": "Cheksiz SMS xabarlar",
+      "feature9": "Barcha eslatmalar turlari",
+      "feature10": "24/7 qo'llab-quvvatlash",
+      "feature11": "Kengaytirilgan hisobotlar",
+      "feature12": "API kirish",
+      "feature13": "Kunlik eslatmalar",
+      "feature14": "Maxsus shablonlar",
+      "feature15": "Avvalgi xabarlar tarixi",
+      "feature16": "10 ta qarzni boshqarish",
+      "feature17": "Oddiy hisobotlar",
+      "feature18": "100 ta qarzni boshqarish",
+      "feature19": "Kengaytirilgan analitika",
+      "feature20": "500 ta qarzni boshqarish",
+      "feature21": "AI tavsiyalar"
+    },
+    "upgradePrompt": "Tarifni yangilash funksiyasi tez orada qo'shiladi",
+    "upgradeNow": "Hoziroq yangilang"
   },
   "settings": {
     "title": "Sozlamalar",

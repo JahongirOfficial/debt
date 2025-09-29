@@ -13,12 +13,13 @@ export const AuthProvider = ({ children }) => {
     currency: 'UZS',
     theme: 'light'
   });
-  const [backendAvailable, setBackendAvailable] = useState(true); // Track backend availability
+  const [backendAvailable, setBackendAvailable] = useState(true);
 
   // Check if backend is available
   useEffect(() => {
     const checkBackendAvailability = async () => {
       try {
+        console.log('Checking backend availability');
         const response = await apiFetch('/health', {
           method: 'GET',
           headers: {
@@ -28,8 +29,10 @@ export const AuthProvider = ({ children }) => {
         
         if (response.ok) {
           setBackendAvailable(true);
+          console.log('Backend is available');
         } else {
           setBackendAvailable(false);
+          console.error('Backend returned non-ok status:', response.status);
         }
       } catch (error) {
         console.error('Backend not available:', error);
@@ -131,11 +134,13 @@ export const AuthProvider = ({ children }) => {
     if (!backendAvailable) {
       setSettings(newSettings);
       
-      // Apply theme immediately
-      if (newSettings.theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      // Apply theme immediately if it exists in the new settings
+      if (newSettings.theme) {
+        if (newSettings.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
       }
       
       return { success: true };
@@ -155,17 +160,19 @@ export const AuthProvider = ({ children }) => {
       const data = await response.json();
 
       if (data.success && data.settings) {
-        setSettings({
-          language: data.settings.language,
-          currency: data.settings.currency,
-          theme: data.settings.theme
-        });
+        // Preserve existing settings that might not be in the response
+        setSettings(prevSettings => ({
+          ...prevSettings,
+          ...data.settings
+        }));
         
-        // Apply theme immediately
-        if (data.settings.theme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        // Apply theme immediately if it exists in the response
+        if (data.settings.theme) {
+          if (data.settings.theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
         }
         
         return { success: true };

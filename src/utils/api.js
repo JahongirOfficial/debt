@@ -11,9 +11,17 @@ const getApiBaseUrl = () => {
   return `http://localhost:${backendPort}/api`;
 };
 
-export const apiBaseUrl = getApiBaseUrl();
+const apiBaseUrl = getApiBaseUrl();
 
 export const apiFetch = async (endpoint, options = {}) => {
   const url = `${apiBaseUrl}${endpoint}`;
-  return fetch(url, options);
+  console.log('Making API request to:', url); // Add logging
+  try {
+    const response = await fetch(url, options);
+    console.log(`API response ${endpoint}:`, response.status);
+    return response;
+  } catch (error) {
+    console.error(`API error ${endpoint}:`, error);
+    throw error;
+  }
 };

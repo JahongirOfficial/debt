@@ -21,7 +21,9 @@
     "usd": "USD",
     "eur": "EUR",
     "rub": "RUB",
-    "tjs": "TJS"
+    "tjs": "TJS",
+    "from": "аз",
+    "to": "ба"
   },
   "navigation": {
     "dashboard": "Панели идоракунӣ",
@@ -30,6 +32,7 @@
     "ratings": "Рейтингҳо",
     "analytics": "Таҳлилҳо",
     "reports": "Ҳисоботҳо",
+    "smsNotifications": "Огоҳиҳои SMS",
     "settings": "Танзимотҳо"
   },
   "auth": {
@@ -121,13 +124,55 @@
       "amountPlaceholder": "масалан: 1 000 000",
       "optional": "ихтиёрӣ",
       "descriptionPlaceholder": "Маълумоти кӯтоҳ дар бораи қарз",
+      "reasonPlaceholder": "Сабаби таҳрирро ворид кунед",
       "phoneNote": "Рақамҳо ба таври худкор формат мешаванд",
       "markAsPaid": "Ҳамчун пардохтшуда қайд кунед",
       "debtId": "ID-и қарз",
       "paidDate": "Санаи пардохт",
       "createdDate": "Санаи эҷод",
-      "updatedDate": "Санаи навсозӣ"
-    }
+      "updatedDate": "Санаи навсозӣ",
+      "viewHistory": "Дидани таърих",
+      "deleteReasonPrompt": "Сабаби нест карданро ворид кунед (ихтиёрӣ):",
+      "payReasonPrompt": "Сабаби пардохтро ворид кунед (ихтиёрӣ):",
+      "reason": "Сабаб"
+    },
+    "created": "Эҷод шудааст",
+    "updated": "Навсозӣ шудааст",
+    "paid": "Пардохт шудааст",
+    "deleted": "Нест карда шудааст",
+    "adjustment": "Танзимот",
+    "debtHistory": "Таърихи қарз",
+    "noHistoryAvailable": "Таърих дастрас нест",
+    "historyWillBeCreated": "Таърих ҳангоми таҳрир ё пардохти қарз эҷод мешавад",
+    "amountChangedFrom": "Сумма тағйир ёфт аз",
+    "amountAdded": "илова шудааст",
+    "amountPaid": "пардохт шудааст",
+    "amountUnchanged": "Сумма тағйир наёфт",
+    "added": "илова шудааст",
+    "paid": "пардохт шудааст",
+    "to": "ба",
+    "action": {
+      "created": "Эҷод шудааст",
+      "updated": "Навсозӣ шудааст",
+      "paid": "Пардохт шудааст",
+      "deleted": "Нест карда шудааст",
+      "adjustment": "Пардохт"
+    },
+    "history": {
+      "createdDescription": "Барои {{creditor}} қарзи {{amount}} эҷод шудааст",
+      "amountIncreased": "{{amount}} илова шудааст",
+      "amountDecreased": "{{amount}} пардохт шудааст",
+      "amountPaid": "{{amount}} пардохт шудааст",
+      "amountUnchanged": "Миқдори қарз тағйир наёфт",
+      "markedAsPaid": "Қарз ҳамчун пардохтшуда қайд шудааст",
+      "deleted": "Қарз нест карда шудааст"
+    },
+    "freeTierLimit": "Корбарони тарифи ройгон метавонанд танҳо 10 қарз илова кунанд. Барои илова кардани қарзҳои бештар нақшаро навсозӣ кунед.",
+    "freeTierLimitTitle": "Ҳудуди қарзҳо расид",
+    "tierLimitReached": "Шумо тарифи {{tier}} -ро истифода мебаред ва {{limit}} қарз илова кардед. Барои илова кардани қарзҳои бештар нақшаро навсозӣ кунед.",
+    "tierLimitTitle": "Ҳудуди қарзҳо расид",
+    "upgradePrompt": "Функсияи навсозии тариф ба зудӣ илова карда мешавад",
+    "upgradeNow": "Ҳозир навсозӣ кунед"
   },
   "calculator": {
     "title": "Калкулятор",
@@ -240,6 +285,93 @@
     "pendingDebtsReport": "Ҳисоботи қарзҳои дар интизорӣ",
     "paidDebtsReport": "Ҳисоботи қарзҳои пардохтшуда",
     "generated": "Эҷод шудааст"
+  },
+  "smsNotifications": {
+    "title": "Огоҳиҳои SMS",
+    "subtitle": "Танзимоти огоҳиҳои SMS",
+    "disabledMessage": "Огоҳиҳои SMS ғайрифаъоланд. Барои фаъол кардан тугмаи болоро зер кунед.",
+    "settings": {
+      "title": "Танзимоти SMS"
+    },
+    "provider": {
+      "title": "Провайдери SMS"
+    },
+    "notifications": {
+      "title": "Намудҳои огоҳӣ",
+      "dueReminder": "Ёдрасонии пардохт",
+      "dueReminderDescription": "Огоҳӣ дар бораи муҳлати пардохти қарз",
+      "paymentReceived": "Пардохт қабул шуд",
+      "paymentReceivedDescription": "Огоҳӣ ҳангоми пардохти қарз"
+    },
+    "templates": {
+      "title": "Идоракунии шаблонҳои SMS",
+      "dueReminder": "Ёдрасонии пардохт",
+      "paymentReceived": "Пардохт қабул шуд",
+      "availableVariables": "Тағйирёбандаҳои дастрас:",
+      "dueReminderPlaceholder": "Азизи {{creditor}}, қарзи шумо ба миқдори {{amount}} дар санаи {{date}} ба охир мерасад. Лутфан, вақти худ пардохт кунед.",
+      "paymentReceivedPlaceholder": "Азизи {{creditor}}, пардохти шумо ба миқдори {{amount}} қабул шуд. Қарзи боқимонда: {{remaining}}"
+    },
+    "reminders": {
+      "title": "Танзимоти ёдрасонӣ",
+      "daysBefore": "Вақти ёдрасонӣ",
+      "days": "рӯз",
+      "time": "Вақти ирсол"
+    },
+    "test": {
+      "title": "Паёми санҷишӣ",
+      "send": "Ирсоли SMSи санҷишӣ",
+      "description": "Барои санҷидани дуруст кардани танзимоти SMS паёми санҷишӣ ирсол кунед"
+    },
+    "freeTier": {
+      "title": "Хидмати SMS дар тарифи ройгон маҳдуд аст",
+      "description": "Шумо тарифи ройгонро истифода мебаред. Барои истифодаи хидмати SMS ба тарифи стандартӣ ё касбӣ гузаред.",
+      "disabledMessage": "Хидмати SMS дар тарифи ройгон ғайрифаъол аст. Барои фаъол кардан тарифи худро навсозӣ кунед."
+    },
+    "activeTier": {
+      "title": "Шумо тарифи {{tier}} -ро истифода мебаред",
+      "description": "Хидмати SMS фаъол аст. Шумо {{limit}} огоҳиҳои SMS барои ин моҳ дастрас доред."
+    },
+    "traffic": {
+      "title": "Трафики SMS",
+      "sms": "SMS",
+      "freeLimit": "Дар тарифи ройгон шумо метавонед 3 SMS дар моҳ ирсол кунед"
+    },
+    "usage": {
+      "title": "Истифодаи SMS",
+      "sent": "Ирсол шуд:",
+      "limit": "Ҳад:",
+      "remaining": "SMS боқимонда:"
+    },
+    "pricing": {
+      "title": "Нақшаҳои тарифӣ",
+      "month": "дар моҳ",
+      "currentPlan": "Нақшаи ҷорӣ",
+      "upgrade": "Нақшаро навсозӣ кунед",
+      "popular": "Бештарин популяр",
+      "feature1": "3 паёми SMS",
+      "feature2": "Ёдрасониҳои асосӣ",
+      "feature3": "Дастгирии Telegram",
+      "feature4": "100 паёми SMS",
+      "feature5": "Ёдрасониҳои пешрафта",
+      "feature6": "Дастгирии бартар",
+      "feature7": "Ҳисоботҳо",
+      "feature8": "Паёмҳои SMS бе маҳдудият",
+      "feature9": "Ҳамаи намудҳои ёдрасонӣ",
+      "feature10": "Дастгирии 24/7",
+      "feature11": "Ҳисоботҳои пешрафта",
+      "feature12": "Дастрасӣ ба API",
+      "feature13": "Ёдрасониҳои ҳаррӯза",
+      "feature14": "Шаблонҳои шахсӣ",
+      "feature15": "Таърихи паёмҳо",
+      "feature16": "Идоракунии 10 қарз",
+      "feature17": "Ҳисоботҳои асосӣ",
+      "feature18": "Идоракунии 100 қарз",
+      "feature19": "Таҳлилҳои пешрафта",
+      "feature20": "Идоракунии 500 қарз",
+      "feature21": "Тавсияҳои AI"
+    },
+    "upgradePrompt": "Функсияи навсозии тариф ба зудӣ илова карда мешавад",
+    "upgradeNow": "Ҳозир навсозӣ кунед"
   },
   "settings": {
     "title": "Танзимотҳо",

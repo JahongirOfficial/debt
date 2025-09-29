@@ -21,7 +21,9 @@
     "usd": "USD",
     "eur": "EUR",
     "rub": "RUB",
-    "tjs": "TJS"
+    "tjs": "TJS",
+    "from": "с",
+    "to": "на"
   },
   "navigation": {
     "dashboard": "Панель управления",
@@ -30,6 +32,7 @@
     "ratings": "Рейтинги",
     "analytics": "Аналитика",
     "reports": "Отчеты",
+    "smsNotifications": "SMS Уведомления",
     "settings": "Настройки"
   },
   "auth": {
@@ -121,13 +124,55 @@
       "amountPlaceholder": "Например: 1 000 000",
       "optional": "необязательно",
       "descriptionPlaceholder": "Краткая информация о долге",
+      "reasonPlaceholder": "Введите причину редактирования",
       "phoneNote": "Номера автоматически форматируются",
       "markAsPaid": "Отметить как оплаченный",
       "debtId": "ID долга",
       "paidDate": "Дата оплаты",
       "createdDate": "Дата создания",
-      "updatedDate": "Дата обновления"
-    }
+      "updatedDate": "Дата обновления",
+      "viewHistory": "Просмотреть историю",
+      "deleteReasonPrompt": "Введите причину удаления (необязательно):",
+      "payReasonPrompt": "Введите причину оплаты (необязательно):",
+      "reason": "Причина"
+    },
+    "created": "Создан",
+    "updated": "Обновлен",
+    "paid": "Оплачен",
+    "deleted": "Удален",
+    "adjustment": "Корректировка",
+    "debtHistory": "История долга",
+    "noHistoryAvailable": "История недоступна",
+    "historyWillBeCreated": "История создается при редактировании или оплате долга",
+    "amountChangedFrom": "Сумма изменена с",
+    "amountAdded": "добавлено",
+    "amountPaid": "оплачено",
+    "amountUnchanged": "Сумма не изменилась",
+    "added": "добавлено",
+    "paid": "оплачено",
+    "to": "на",
+    "action": {
+      "created": "Создан",
+      "updated": "Обновлен",
+      "paid": "Оплачен",
+      "deleted": "Удален",
+      "adjustment": "Платеж"
+    },
+    "history": {
+      "createdDescription": "Создан долг для {{creditor}} на сумму {{amount}}",
+      "amountIncreased": "Добавлено {{amount}}",
+      "amountDecreased": "Оплачено {{amount}}",
+      "amountPaid": "Оплачено {{amount}}",
+      "amountUnchanged": "Сумма долга не изменена",
+      "markedAsPaid": "Долг отмечен как оплаченный",
+      "deleted": "Долг удален"
+    },
+    "freeTierLimit": "Пользователи бесплатного тарифа могут добавить только 10 долгов. Обновите тариф, чтобы добавить больше долгов.",
+    "freeTierLimitTitle": "Достигнут лимит долгов",
+    "tierLimitReached": "Вы используете тариф {{tier}} и добавили {{limit}} долгов. Обновите тариф, чтобы добавить больше долгов.",
+    "tierLimitTitle": "Достигнут лимит долгов",
+    "upgradePrompt": "Функция обновления тарифа будет добавлена в ближайшее время",
+    "upgradeNow": "Обновить сейчас"
   },
   "calculator": {
     "title": "Калькулятор",
@@ -240,6 +285,87 @@
     "pendingDebtsReport": "Отчет о долгах в ожидании",
     "paidDebtsReport": "Отчет об оплаченных долгах",
     "generated": "Создано"
+  },
+  "smsNotifications": {
+    "title": "SMS Уведомления",
+    "subtitle": "Настройка SMS уведомлений",
+    "disabledMessage": "SMS уведомления отключены. Нажмите переключатель выше, чтобы включить.",
+    "settings": {
+      "title": "Настройки SMS"
+    },
+    "provider": {
+      "title": "SMS Провайдер"
+    },
+    "notifications": {
+      "title": "Типы уведомлений",
+      "dueReminder": "Напоминание о платеже",
+      "dueReminderDescription": "Напоминать перед сроком долга",
+      "paymentReceived": "Платеж получен",
+      "paymentReceivedDescription": "Уведомлять при оплате долга"
+    },
+    "templates": {
+      "title": "Управление шаблонами SMS",
+      "dueReminder": "Напоминание о платеже",
+      "paymentReceived": "Платеж получен",
+      "availableVariables": "Доступные переменные:",
+      "dueReminderPlaceholder": "Уважаемый {{creditor}}, ваш долг в размере {{amount}} истекает {{date}}. Пожалуйста, оплатите вовремя.",
+      "paymentReceivedPlaceholder": "Уважаемый {{creditor}}, ваш платеж в размере {{amount}} получен. Оставшийся долг: {{remaining}}"
+    },
+    "reminders": {
+      "title": "Настройки напоминаний",
+      "daysBefore": "Время напоминания",
+      "days": "дней",
+      "time": "Время отправки"
+    },
+    "test": {
+      "title": "Тестовое сообщение",
+      "send": "Отправить тестовое SMS",
+      "description": "Отправьте тестовое сообщение, чтобы проверить правильность настроек SMS"
+    },
+    "freeTier": {
+      "title": "SMS-сервис ограничен в бесплатном тарифе",
+      "description": "Вы используете бесплатный тариф. Перейдите на стандартный или профессиональный тариф, чтобы использовать SMS-сервис.",
+      "disabledMessage": "SMS-сервис отключен в бесплатном тарифе. Обновите тариф, чтобы активировать."
+    },
+    "activeTier": {
+      "title": "Вы используете тариф {{tier}}",
+      "description": "SMS-сервис активен. У вас есть {{limit}} SMS-уведомлений в месяц."
+    },
+    "traffic": {
+      "title": "SMS Трафик",
+      "sms": "SMS",
+      "freeLimit": "В бесплатном тарифе вы можете отправлять 3 SMS в месяц"
+    },
+    "usage": {
+      "title": "Использование SMS",
+      "sent": "Отправлено:",
+      "limit": "Лимит:",
+      "remaining": "Осталось SMS:"
+    },
+    "pricing": {
+      "title": "Тарифные планы",
+      "month": "в месяц",
+      "currentPlan": "Текущий план",
+      "upgrade": "Обновить план",
+      "popular": "Самый популярный",
+      "feature1": "3 SMS сообщения",
+      "feature2": "Базовые напоминания",
+      "feature3": "Поддержка Telegram",
+      "feature4": "100 SMS сообщений",
+      "feature5": "Расширенные напоминания",
+      "feature6": "Приоритетная поддержка",
+      "feature7": "Отчеты",
+      "feature8": "Неограниченные SMS сообщения",
+      "feature9": "Все типы напоминаний",
+      "feature10": "Круглосуточная поддержка",
+      "feature11": "Расширенные отчеты",
+      "feature12": "Доступ к API",
+      "feature13": "Ежедневные напоминания",
+      "feature14": "Пользовательские шаблоны",
+      "feature15": "История сообщений"
+    },
+    "upgradePrompt": "Функция обновления тарифа будет добавлена в ближайшее время",
+    "upgradeNow": "Обновить сейчас"
   },
   "settings": {
     "title": "Настройки",

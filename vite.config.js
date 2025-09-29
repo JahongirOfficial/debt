@@ -13,5 +13,11 @@ export default defineConfig({
         entryFileNames: 'assets/[name].js'
       }
     }
+  },
+  // Add server configuration
+  server: {
+    port: 5173, // Explicitly set the port
+    host: 'localhost', // Ensure it binds to localhost
+    open: true // Automatically open browser
   }
 })

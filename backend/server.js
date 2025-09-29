@@ -33,6 +33,22 @@ mongoose.connect(MONGODB_URI, {
   startServer();
 });
 
+// Scheduled task to clean up old debt history records (older than 1 month)
+setInterval(async () => {
+  try {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const result = await DebtHistory.deleteMany({
+      createdAt: { $lt: oneMonthAgo }
+    });
+    
+    console.log(`Cleaned up ${result.deletedCount} old debt history records`);
+  } catch (error) {
+    console.error('Error cleaning up old debt history records:', error);
+  }
+}, 24 * 60 * 60 * 1000); // Run once every 24 hours
+
 // Serverni ishga tushirish funksiyasi
 function startServer() {
   const server = app.listen(PORT, () => {
@@ -42,9 +58,14 @@ function startServer() {
   // Port band bo'lsa boshqa portdan foydalanish
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${PORT} is already in use, trying ${parseInt(PORT) + 1}`);
-      process.env.PORT = parseInt(PORT) + 1;
-      startServer();
+      const newPort = parseInt(PORT) + 1;
+      console.log(`Port ${PORT} is already in use, trying ${newPort}`);
+      // Instead of recursively calling startServer, we create a new server with the new port
+      app.listen(newPort, () => {
+        console.log(`Server running on port ${newPort}`);
+      }).on('error', (err) => {
+        console.error('Server error:', err);
+      });
     } else {
       console.error('Server error:', err);
     }
@@ -182,6 +203,68 @@ try {
   Debt = mongoose.model('Debt', debtSchema);
 } catch (error) {
   Debt = mongoose.model('Debt');
+}
+
+// Debt History Schema (MongoDB ulangan bo'lsa)
+const debtHistorySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  debtId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Debt',
+    required: true,
+    index: true
+  },
+  action: {
+    type: String,
+    enum: ['created', 'updated', 'paid', 'deleted', 'adjustment'],
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  previousAmount: {
+    type: Number
+  },
+  newAmount: {
+    type: Number
+  },
+  creditor: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'paid'],
+    default: 'pending'
+  },
+  reason: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  }
+}, {
+  timestamps: true
+});
+
+// DebtHistory model (MongoDB ulangan bo'lsa)
+let DebtHistory;
+try {
+  DebtHistory = mongoose.model('DebtHistory', debtHistorySchema);
+} catch (error) {
+  DebtHistory = mongoose.model('DebtHistory');
 }
 
 // User Settings Schema (MongoDB ulangan bo'lsa)
@@ -680,7 +763,7 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
   }
   
   try {
-    const { creditor, amount, description, phone, countryCode, debtDate, currency } = req.body;
+    const { creditor, amount, description, phone, countryCode, debtDate, currency, reason } = req.body;
     
     // Validatsiya
     if (!creditor || !amount || !debtDate) {
@@ -704,6 +787,22 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
     });
     
     await debt.save();
+    
+    // Create debt history record
+    const debtHistory = new DebtHistory({
+      userId: req.user.userId,
+      debtId: debt._id,
+      action: 'created',
+      amount: debt.amount,
+      previousAmount: 0,
+      newAmount: debt.amount,
+      creditor: debt.creditor,
+      description: debt.description,
+      status: debt.status,
+      reason: reason || '' // Add reason to debt history
+    });
+    
+    await debtHistory.save();
     
     res.status(201).json({
       success: true,
@@ -825,7 +924,7 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
   }
   
   try {
-    const { amount, phone, countryCode, description } = req.body;
+    const { amount, phone, countryCode, description, reason } = req.body;
     
     // Avvalgi qarzni olish
     const existingDebt = await Debt.findOne({
@@ -846,9 +945,23 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
     if (countryCode !== undefined) update.countryCode = countryCode;
     if (description !== undefined) update.description = description;
     
+    // Create debt history record before updating
+    const debtHistory = new DebtHistory({
+      userId: req.user.userId,
+      debtId: req.params.id,
+      action: 'updated',
+      amount: existingDebt.amount,
+      previousAmount: existingDebt.amount,
+      creditor: existingDebt.creditor,
+      description: existingDebt.description,
+      status: existingDebt.status,
+      reason: reason || '' // Add reason to debt history
+    });
+    
     // Agar miqdor o'zgartirilgan bo'lsa
     if (amount !== undefined) {
       update.amount = amount;
+      debtHistory.newAmount = amount;
       
       // Agar yangi miqdor avvalgisidan kam bo'lsa, farqni to'langan sifatida hisoblash
       if (amount < existingDebt.amount) {
@@ -865,8 +978,14 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
         });
         
         await debtAdjustment.save();
+        
+        // Update debt history action
+        debtHistory.action = 'adjustment';
       }
     }
+    
+    // Save debt history
+    await debtHistory.save();
     
     // Qarzni yangilash
     const debt = await Debt.findOneAndUpdate(
@@ -907,6 +1026,37 @@ app.delete('/api/debts/:id', authenticateToken, async (req, res) => {
   }
   
   try {
+    const { reason } = req.body; // Get reason from request body
+    
+    // Avvalgi qarzni olish
+    const existingDebt = await Debt.findOne({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    
+    if (!existingDebt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
+    // Create debt history record before deleting
+    const debtHistory = new DebtHistory({
+      userId: req.user.userId,
+      debtId: req.params.id,
+      action: 'deleted',
+      amount: existingDebt.amount,
+      previousAmount: existingDebt.amount,
+      newAmount: 0, // When deleting, the new amount is effectively 0
+      creditor: existingDebt.creditor,
+      description: existingDebt.description,
+      status: existingDebt.status,
+      reason: reason || '' // Add reason to debt history
+    });
+    
+    await debtHistory.save();
+    
     // Qarzni o'chirish
     const debt = await Debt.findOneAndDelete({
       _id: req.params.id,
@@ -951,14 +1101,41 @@ app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
   }
   
   try {
+    const { reason } = req.body; // Get reason from request body
+    
+    // Avvalgi qarzni olish
+    const existingDebt = await Debt.findOne({
+      _id: req.params.id,
+      userId: req.user.userId
+    });
+    
+    if (!existingDebt) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Debt not found' 
+      });
+    }
+    
+    // Create debt history record before updating
+    const debtHistory = new DebtHistory({
+      userId: req.user.userId,
+      debtId: req.params.id,
+      action: 'paid',
+      amount: existingDebt.amount,
+      previousAmount: existingDebt.amount,
+      newAmount: 0, // When marking as paid, the new amount is effectively 0
+      creditor: existingDebt.creditor,
+      description: existingDebt.description,
+      status: existingDebt.status,
+      reason: reason || '' // Add reason to debt history
+    });
+    
+    await debtHistory.save();
+    
     // Qarzni to'langan deb belgilash
     const debt = await Debt.findOneAndUpdate(
       { _id: req.params.id, userId: req.user.userId },
-      { 
-        status: 'paid', 
-        paidAt: new Date(),
-        updatedAt: new Date()
-      },
+      { status: 'paid', paidAt: new Date(), updatedAt: new Date() },
       { new: true }
     );
     
@@ -975,7 +1152,7 @@ app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
       debt
     });
   } catch (error) {
-    console.error('Mark debt as paid error:', error);
+    console.error('Mark as paid error:', error);
     res.status(500).json({ 
       success: false, 
       message: 'Server error marking debt as paid' 
@@ -983,30 +1160,32 @@ app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
   }
 });
 
-// Qarz tuzatishlarini olish
-app.get('/api/debt-adjustments', authenticateToken, async (req, res) => {
+// Qarz tarixini olish
+app.get('/api/debts/:id/history', authenticateToken, async (req, res) => {
   // MongoDB ulanmagan bo'lsa test javob qaytarish
   if (!mongoose.connection.readyState) {
     return res.json({
       success: true,
-      adjustments: []
+      history: []
     });
   }
   
   try {
-    const adjustments = await DebtAdjustment.find({
+    // Qarz tarixini olish
+    const history = await DebtHistory.find({
+      debtId: req.params.id,
       userId: req.user.userId
     }).sort({ createdAt: -1 });
     
     res.json({
       success: true,
-      adjustments
+      history
     });
   } catch (error) {
-    console.error('Get debt adjustments error:', error);
+    console.error('Get debt history error:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error fetching debt adjustments' 
+      message: 'Server error fetching debt history' 
     });
   }
 });

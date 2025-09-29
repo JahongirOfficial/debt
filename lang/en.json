@@ -21,7 +21,9 @@
     "usd": "USD",
     "eur": "EUR",
     "rub": "RUB",
-    "tjs": "TJS"
+    "tjs": "TJS",
+    "from": "from",
+    "to": "to"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -30,6 +32,7 @@
     "ratings": "Ratings",
     "analytics": "Analytics",
     "reports": "Reports",
+    "smsNotifications": "SMS Notifications",
     "settings": "Settings"
   },
   "auth": {
@@ -121,13 +124,55 @@
       "amountPlaceholder": "e.g. 1 000 000",
       "optional": "optional",
       "descriptionPlaceholder": "Brief information about the debt",
+      "reasonPlaceholder": "Enter reason for editing",
       "phoneNote": "Numbers are automatically formatted",
       "markAsPaid": "Mark as Paid",
       "debtId": "Debt ID",
       "paidDate": "Paid Date",
       "createdDate": "Created Date",
-      "updatedDate": "Updated Date"
-    }
+      "updatedDate": "Updated Date",
+      "viewHistory": "View History",
+      "deleteReasonPrompt": "Enter reason for deletion (optional):",
+      "payReasonPrompt": "Enter reason for payment (optional):",
+      "reason": "Reason"
+    },
+    "created": "Created",
+    "updated": "Updated",
+    "paid": "Paid",
+    "deleted": "Deleted",
+    "adjustment": "Adjustment",
+    "debtHistory": "Debt History",
+    "noHistoryAvailable": "No history available",
+    "historyWillBeCreated": "History is created when editing or paying a debt",
+    "amountChangedFrom": "Amount changed from",
+    "amountAdded": "added",
+    "amountPaid": "paid",
+    "amountUnchanged": "Amount unchanged",
+    "added": "added",
+    "paid": "paid",
+    "to": "to",
+    "action": {
+      "created": "Created",
+      "updated": "Updated",
+      "paid": "Paid",
+      "deleted": "Deleted",
+      "adjustment": "Payment"
+    },
+    "history": {
+      "createdDescription": "Created debt for {{creditor}} of {{amount}}",
+      "amountIncreased": "Added {{amount}}",
+      "amountDecreased": "Paid {{amount}}",
+      "amountPaid": "Paid {{amount}}",
+      "amountUnchanged": "Debt amount unchanged",
+      "markedAsPaid": "Debt marked as paid",
+      "deleted": "Debt deleted"
+    },
+    "freeTierLimit": "Free tier users can only add 10 debts. Upgrade your plan to add more debts.",
+    "freeTierLimitTitle": "Debt limit reached",
+    "tierLimitReached": "You are on the {{tier}} tier and have added {{limit}} debts. Upgrade your plan to add more debts.",
+    "tierLimitTitle": "Debt limit reached",
+    "upgradePrompt": "Plan upgrade feature will be added soon",
+    "upgradeNow": "Upgrade now"
   },
   "calculator": {
     "title": "Calculator",
@@ -240,6 +285,93 @@
     "pendingDebtsReport": "Pending Debts Report",
     "paidDebtsReport": "Paid Debts Report",
     "generated": "Generated"
+  },
+  "smsNotifications": {
+    "title": "SMS Notifications",
+    "subtitle": "Configure SMS notifications",
+    "disabledMessage": "SMS notifications are disabled. Click the toggle above to enable.",
+    "settings": {
+      "title": "SMS Settings"
+    },
+    "provider": {
+      "title": "SMS Provider"
+    },
+    "notifications": {
+      "title": "Notification Types",
+      "dueReminder": "Payment reminder",
+      "dueReminderDescription": "Remind before debt due date",
+      "paymentReceived": "Payment received",
+      "paymentReceivedDescription": "Notify when debt is paid"
+    },
+    "templates": {
+      "title": "SMS Template Management",
+      "dueReminder": "Payment reminder",
+      "paymentReceived": "Payment received",
+      "availableVariables": "Available variables:",
+      "dueReminderPlaceholder": "Dear {{creditor}}, your debt of {{amount}} will expire on {{date}}. Please pay on time.",
+      "paymentReceivedPlaceholder": "Dear {{creditor}}, your payment of {{amount}} has been received. Remaining debt: {{remaining}}"
+    },
+    "reminders": {
+      "title": "Reminder Settings",
+      "daysBefore": "Reminder time",
+      "days": "days",
+      "time": "Send time"
+    },
+    "test": {
+      "title": "Test Message",
+      "send": "Send test SMS",
+      "description": "Send a test message to verify SMS settings are working correctly"
+    },
+    "freeTier": {
+      "title": "SMS service limited on free tier",
+      "description": "You are on the free tier. Upgrade to standard or professional tier to use SMS service.",
+      "disabledMessage": "SMS service is disabled on free tier. Upgrade your plan to activate."
+    },
+    "activeTier": {
+      "title": "You are on {{tier}} tier",
+      "description": "SMS service is active. You have {{limit}} SMS notifications available for this month."
+    },
+    "traffic": {
+      "title": "SMS Traffic",
+      "sms": "SMS",
+      "freeLimit": "On free tier you can send 3 SMS per month"
+    },
+    "usage": {
+      "title": "SMS Usage",
+      "sent": "Sent:",
+      "limit": "Limit:",
+      "remaining": "Remaining SMS:"
+    },
+    "pricing": {
+      "title": "Pricing Plans",
+      "month": "per month",
+      "currentPlan": "Current Plan",
+      "upgrade": "Upgrade Plan",
+      "popular": "Most Popular",
+      "feature1": "3 SMS messages",
+      "feature2": "Basic reminders",
+      "feature3": "Telegram support",
+      "feature4": "100 SMS messages",
+      "feature5": "Advanced reminders",
+      "feature6": "Priority support",
+      "feature7": "Reports",
+      "feature8": "Unlimited SMS messages",
+      "feature9": "All reminder types",
+      "feature10": "24/7 support",
+      "feature11": "Advanced reports",
+      "feature12": "API access",
+      "feature13": "Daily reminders",
+      "feature14": "Custom templates",
+      "feature15": "Message history",
+      "feature16": "Manage 10 debts",
+      "feature17": "Basic reports",
+      "feature18": "Manage 100 debts",
+      "feature19": "Advanced analytics",
+      "feature20": "Manage 500 debts",
+      "feature21": "AI recommendations"
+    },
+    "upgradePrompt": "Plan upgrade feature will be added soon",
+    "upgradeNow": "Upgrade now"
   },
   "settings": {
     "title": "Settings",
