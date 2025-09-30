@@ -488,8 +488,12 @@ export function QarzdaftarDebts() {
 
   // Function to fetch and show debt history
   const showDebtHistory = async (debtId) => {
-    const result = await fetchDebtHistory(debtId);
+    // Ensure only history modal is open
+    setShowAddForm(false);
+    setEditingDebt(null);
+    setShowDetailsModal(null);
     
+    const result = await fetchDebtHistory(debtId);
     if (result.success) {
       setDebtHistory(result.history);
       setShowHistoryModal(debtId);
@@ -678,167 +682,104 @@ export function QarzdaftarDebts() {
         </button>
       </div>
     
-      {/* Add Debt Modal */}
-      {showAddForm && (
-        <div id="modal-backdrop" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" onClick={handleAddModalBackdropClick}>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('debts.addDebt', 'Yangi qarz qo\'shish')}</h3>
-            <form onSubmit={(e) => { e.preventDefault(); addDebt(); }}>
-              <div className="mb-4">
-                <label htmlFor="creditor" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                  {t('debts.creditor', 'Qarzchi')}
-                </label>
-                <input
-                  type="text"
-                  id="creditor"
-                  value={newDebt.creditor}
-                  onChange={(e) => setNewDebt({...newDebt, creditor: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="amount" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                  {t('debts.amount', 'Summa')}
-                </label>
-                <input
-                  type="text"
-                  id="amount"
-                  value={newDebt.amount}
-                  onChange={handleAmountChange}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="phone" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                  {t('debts.phone', 'Telefon')}
-                </label>
-                <div className="flex">
-                  <select
-                    id="countryCode"
-                    value={newDebt.countryCode}
-                    onChange={(e) => handleCountryCodeChange(e.target.value)}
-                    className="w-24 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                  >
-                    {countryCodes.map(code => (
-                      <option key={code.code} value={code.code}>{code.flag} {code.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    id="phone"
-                    value={newDebt.phone}
-                    onChange={handlePhoneChange}
-                    className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-              <div className="mb-4">
-                <label htmlFor="description" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                  {t('debts.description', 'Izoh')}
-                </label>
-                <textarea
-                  id="description"
-                  value={newDebt.description}
-                  onChange={(e) => setNewDebt({...newDebt, description: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                />
-              </div>
-              <div className="mb-4">
-                <label htmlFor="debtDate" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                  {t('debts.date', 'Sana')}
-                </label>
-                <input
-                  type="date"
-                  id="debtDate"
-                  value={newDebt.debtDate}
-                  onChange={(e) => setNewDebt({...newDebt, debtDate: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-                />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mr-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition-all"
-                >
-                  {t('debts.cancel', 'Bekor qilish')}
-                </button>
-                <button
-                  type="submit"
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-lg hover:shadow-lg transition-all"
-                >
-                  {t('debts.add', 'Qo\'shish')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Old Add Debt Modal removed. Original is below as comment. */}
+      {/*
+        // <div id="modal-backdrop" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" onClick={handleAddModalBackdropClick}>
+        //   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
+        //     <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('debts.addDebt', 'Yangi qarz qo\'shish')}</h3>
+        //     <form onSubmit={(e) => { e.preventDefault(); addDebt(); }}>
+        //       <div className="mb-4">
+        //         <label htmlFor="creditor" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+        //           {t('debts.creditor', 'Qarzchi')}
+        //         </label>
+        //         <input
+        //           type="text"
+        //           id="creditor"
+        //           value={newDebt.creditor}
+        //           onChange={(e) => setNewDebt({...newDebt, creditor: e.target.value})}
+        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //         />
+        //       </div>
+        //       <div className="mb-4">
+        //         <label htmlFor="amount" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+        //           {t('debts.amount', 'Summa')}
+        //         </label>
+        //         <input
+        //           type="text"
+        //           id="amount"
+        //           value={newDebt.amount}
+        //           onChange={handleAmountChange}
+        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //         />
+        //       </div>
+        //       <div className="mb-4">
+        //         <label htmlFor="phone" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+        //           {t('debts.phone', 'Telefon')}
+        //         </label>
+        //         <div className="flex">
+        //           <select
+        //             id="countryCode"
+        //             value={newDebt.countryCode}
+        //             onChange={(e) => handleCountryCodeChange(e.target.value)}
+        //             className="w-24 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //           >
+        //             {countryCodes.map(code => (
+        //               <option key={code.code} value={code.code}>{code.flag} {code.name}</option>
+        //             ))}
+        //           </select>
+        //           <input
+        //             type="text"
+        //             id="phone"
+        //             value={newDebt.phone}
+        //             onChange={handlePhoneChange}
+        //             className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //           />
+        //         </div>
+        //       </div>
+        //       <div className="mb-4">
+        //         <label htmlFor="description" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+        //           {t('debts.description', 'Izoh')}
+        //         </label>
+        //         <textarea
+        //           id="description"
+        //           value={newDebt.description}
+        //           onChange={(e) => setNewDebt({...newDebt, description: e.target.value})}
+        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //         />
+        //       </div>
+        //       <div className="mb-4">
+        //         <label htmlFor="debtDate" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
+        //           {t('debts.date', 'Sana')}
+        //         </label>
+        //         <input
+        //           type="date"
+        //           id="debtDate"
+        //           value={newDebt.debtDate}
+        //           onChange={(e) => setNewDebt({...newDebt, debtDate: e.target.value})}
+        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
+        //         />
+        //       </div>
+        //       <div className="flex justify-end">
+        //         <button
+        //           type="button"
+        //           onClick={closeModal}
+        //           className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mr-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition-all"
+        //         >
+        //           {t('debts.cancel', 'Bekor qilish')}
+        //         </button>
+        //         <button
+        //           type="submit"
+        //           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-lg hover:shadow-lg transition-all"
+        //         >
+        //           {t('debts.add', 'Qo\'shish')}
+        //         </button>
+        //       </div>
+        //     </form>
+        //   </div>
+        // </div>
+      */}
 
-      {/* Debt Details Modal */}
-      {showDetailsModal && (
-        <div id="details-modal-backdrop" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" onClick={handleDetailsModalBackdropClick}>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('debts.debtDetails', 'Qarz ma\'lumotlari')}</h3>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.creditor', 'Qarzchi')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{showDetailsModal.creditor}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.amount', 'Summa')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{formatCurrency(showDetailsModal.amount, showDetailsModal.currency || currency || 'UZS', language)}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.phone', 'Telefon')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{formatPhoneNumber(showDetailsModal.phone, showDetailsModal.countryCode)}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.date', 'Sana')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{new Date(showDetailsModal.debtDate).toLocaleDateString()}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.status', 'Holat')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{showDetailsModal.status === 'pending' ? t('debts.pending', 'Kutilayotgan') : t('debts.paid', 'To\'langan')}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.description', 'Izoh')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{showDetailsModal.description || t('debts.noDescription', 'Izoh yo\'q')}</p>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={closeDetailsModal}
-                className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mr-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition-all"
-              >
-                {t('debts.close', 'Yopish')}
-              </button>
-              <button
-                onClick={() => markAsPaidHandler(showDetailsModal._id)}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-lg hover:shadow-lg transition-all"
-              >
-                {t('debts.markAsPaid', 'To\'langan deb o\'rnatish')}
-              </button>
-              <button
-                onClick={() => showDebtHistory(showDetailsModal._id)}
-                className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-lg hover:shadow-lg transition-all"
-              >
-                {t('debts.history', 'Tarix')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* Edit Debt Modal */}
       {editingDebt && (
@@ -925,70 +866,7 @@ export function QarzdaftarDebts() {
         </div>
       )}
 
-      {/* Debt History Modal */}
-      {showHistoryModal && (
-        <div id="history-modal-backdrop" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" onClick={handleHistoryModalBackdropClick}>
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('debts.debtHistory', 'Qarz tarixi')}</h3>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.creditor', 'Qarzchi')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{debts.find(debt => debt._id === showHistoryModal)?.creditor}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.amount', 'Summa')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{formatCurrency(debts.find(debt => debt._id === showHistoryModal)?.amount, debts.find(debt => debt._id === showHistoryModal)?.currency || currency || 'UZS', language)}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.phone', 'Telefon')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{formatPhoneNumber(debts.find(debt => debt._id === showHistoryModal)?.phone, debts.find(debt => debt._id === showHistoryModal)?.countryCode)}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.date', 'Sana')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{new Date(debts.find(debt => debt._id === showHistoryModal)?.debtDate).toLocaleDateString()}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.status', 'Holat')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{debts.find(debt => debt._id === showHistoryModal)?.status === 'pending' ? t('debts.pending', 'Kutilayotgan') : t('debts.paid', 'To\'langan')}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.description', 'Izoh')}
-              </label>
-              <p className="text-gray-600 dark:text-gray-300">{debts.find(debt => debt._id === showHistoryModal)?.description || t('debts.noDescription', 'Izoh yo\'q')}</p>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-                {t('debts.history', 'Tarix')}
-              </label>
-              <ul className="list-disc pl-4">
-                {debtHistory.map((entry, index) => (
-                  <li key={index}>
-                    <p className="text-gray-600 dark:text-gray-300">{entry.date}: {entry.reason}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowHistoryModal(null)}
-                className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mr-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition-all"
-              >
-                {t('debts.close', 'Yopish')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {/* Results Count */}
       <div className="mb-4">
@@ -1154,27 +1032,27 @@ export function QarzdaftarDebts() {
           onClick={handleAddModalBackdropClick}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 dark:bg-gray-800 relative"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-4 dark:bg-gray-800 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button 
               onClick={closeModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               aria-label="Close"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
             
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                 {t('debts.form.addDebt', 'Qarz qo\'shish')}
               </h3>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                   {t('debts.form.creditor', 'Kreditor nomi')} <span className="text-red-500">*</span>
@@ -1184,7 +1062,7 @@ export function QarzdaftarDebts() {
                   placeholder={t('debts.form.creditorPlaceholder', 'Masalan: Ali')}
                   value={newDebt.creditor}
                   onChange={(e) => setNewDebt({...newDebt, creditor: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                   autoFocus
                 />
               </div>
@@ -1198,7 +1076,7 @@ export function QarzdaftarDebts() {
                   placeholder={t('debts.form.amountPlaceholder', 'Masalan: 1 000 000')}
                   value={newDebt.amount}
                   onChange={handleAmountChange}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 />
               </div>
               
@@ -1210,12 +1088,12 @@ export function QarzdaftarDebts() {
                   placeholder={t('debts.form.descriptionPlaceholder', 'Qarz haqida qisqa ma\'lumot')}
                   value={newDebt.description}
                   onChange={(e) => setNewDebt({...newDebt, description: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                   rows="3"
                 ></textarea>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
                     {t('debts.form.phone', 'Telefon raqami')}
@@ -1223,10 +1101,10 @@ export function QarzdaftarDebts() {
                   <select
                     value={newDebt.countryCode}
                     onChange={(e) => handleCountryCodeChange(e.target.value)}
-                    className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white appearance-none bg-no-repeat bg-right-center bg-[length:20px_20px] transition-all duration-200 hover:border-orange-400"
+                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white appearance-none bg-no-repeat bg-right-center bg-[length:16px_16px] transition-all duration-200 hover:border-orange-400"
                     style={{
                       backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                      backgroundPosition: 'right 0.75rem center'
+                      backgroundPosition: 'right 0.5rem center'
                     }}
                   >
                     {countryCodes.map((country) => (
@@ -1245,7 +1123,7 @@ export function QarzdaftarDebts() {
                     placeholder="XX XXX XX XX"
                     value={newDebt.phone}
                     onChange={handlePhoneChange}
-                    className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                   />
                 </div>
               </div>
@@ -1261,7 +1139,7 @@ export function QarzdaftarDebts() {
                   type="date"
                   value={newDebt.debtDate}
                   onChange={(e) => setNewDebt({...newDebt, debtDate: e.target.value})}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 />
               </div>
               
@@ -1272,10 +1150,10 @@ export function QarzdaftarDebts() {
                 <select
                   value={newDebt.currency}
                   onChange={(e) => handleCurrencyChange(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white appearance-none bg-no-repeat bg-right-center bg-[length:20px_20px] transition-all duration-200 hover:border-orange-400"
+                  className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white appearance-none bg-no-repeat bg-right-center bg-[length:16px_16px] transition-all duration-200 hover:border-orange-400"
                   style={{
                     backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                    backgroundPosition: 'right 0.75rem center'
+                    backgroundPosition: 'right 0.5rem center'
                   }}
                 >
                   <option value="UZS">{t('common.uzs', "UZS - O'zbek so'm")}</option>
@@ -1291,13 +1169,13 @@ export function QarzdaftarDebts() {
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={addDebt}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl"
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-2 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl"
                 >
                   {t('debts.form.addDebt', 'Qarz qo\'shish')}
                 </button>
                 <button
                   onClick={closeModal}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg font-medium transition-colors dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
                 >
                   {t('common.cancel', 'Bekor qilish')}
                 </button>
