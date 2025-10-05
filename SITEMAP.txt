@@ -1,0 +1,35 @@
+Qarzdaftar - Sayt xaritasi (Sitemap)
+
+Asosiy sahifalar:
+
+1. Kirish
+   URL: https://qarzdaftar.uz/#/login
+
+2. Ro'yxatdan o'tish
+   URL: https://qarzdaftar.uz/#/register
+
+3. Boshqaruv paneli (Dashboard)
+   URL: https://qarzdaftar.uz/#/dashboard
+
+4. Qarzlar ro'yxati
+   URL: https://qarzdaftar.uz/#/debts
+
+5. Kalkulyator
+   URL: https://qarzdaftar.uz/#/calculator
+
+6. Reytinglar
+   URL: https://qarzdaftar.uz/#/ratings
+
+7. Analitika
+   URL: https://qarzdaftar.uz/#/analytics
+
+8. Hisobotlar
+   URL: https://qarzdaftar.uz/#/reports
+
+9. Eslatmalar
+   URL: https://qarzdaftar.uz/#/sms-notifications
+
+10. Sozlamalar
+    URL: https://qarzdaftar.uz/#/settings
+
+Eslatma: Bu ilova Single Page Application (SPA) bo'lgani uchun barcha sahifalar #/ prefiksi orqali kirish imkoniyatiga ega.

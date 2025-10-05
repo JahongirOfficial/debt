@@ -39,7 +39,7 @@ export const useTranslation = (language) => {
     loadTranslations();
   }, [language]);
   
-  const translate = (key, defaultValue = key) => {
+  const translate = (key, defaultValue = key, params) => {
     const keys = key.split('.');
     let value = t;
     
@@ -50,8 +50,18 @@ export const useTranslation = (language) => {
         return defaultValue;
       }
     }
-    
-    return typeof value === 'string' ? value : defaultValue;
+
+    let str = typeof value === 'string' ? value : defaultValue;
+
+    // Simple interpolation for placeholders like {{var}}
+    if (params && typeof params === 'object') {
+      Object.entries(params).forEach(([paramKey, paramVal]) => {
+        const pattern = new RegExp(`\\{\\{\\s*${paramKey}\\s*\\}\\}`, 'g');
+        str = str.replace(pattern, String(paramVal));
+      });
+    }
+
+    return str;
   };
   
   return translate;

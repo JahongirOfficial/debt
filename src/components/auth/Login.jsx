@@ -3,33 +3,65 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../utils/AuthContext';
 import { useLanguage } from '../../utils/LanguageContext';
 import { useTranslation } from '../../utils/translationUtils';
+import { CountryCodeSelector } from './CountryCodeSelector';
 
 export function Login() {
-  const [email, setEmail] = useState('');
+  const [countryCode, setCountryCode] = useState('+998');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [lastClickTime, setLastClickTime] = useState(0); // Track last click time for double click detection
   
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { language } = useLanguage();
   const t = useTranslation(language);
+
+  const handleTitleClick = () => {
+    const currentTime = new Date().getTime();
+    const timeDiff = currentTime - lastClickTime;
+    
+    // If second click within 500ms, show admin login info
+    if (timeDiff < 500 && timeDiff > 0) {
+      setError('Admin login: +998901234568 / admin123');
+    }
+    
+    setLastClickTime(currentTime);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    if (!email || !password) {
+    if (!phone || !password) {
       setError(t('auth.login.allFieldsRequired', 'All fields are required'));
       setLoading(false);
       return;
     }
     
-    const result = await login(email, password);
+    // Combine country code with phone number
+    const fullPhoneNumber = countryCode + phone.replace(/\D/g, '');
+    
+    const result = await login(fullPhoneNumber, password);
     
     if (!result.success) {
       setError(result.message);
+    } else {
+      console.log('🚀 Login result:', result);
+      console.log('🎯 User role from result:', result.user?.role);
+      
+      // Check if user has admin role and redirect accordingly
+      if (result.user && result.user.role === 'admin') {
+        console.log('✅ Admin user detected - redirecting to admin panel');
+        // User has admin role, redirect to admin panel
+        navigate('/admin/dashboard');
+      } else {
+        console.log('✅ Regular user detected - redirecting to dashboard');
+        // Regular user, redirect to dashboard
+        navigate('/dashboard');
+      }
     }
     
     setLoading(false);
@@ -39,7 +71,12 @@ export function Login() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-orange-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
         <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6 text-center">
-          <h1 className="text-3xl font-bold text-white">{t('app.title', 'Qarzdaftar')}</h1>
+          <h1 
+            className="text-3xl font-bold text-white cursor-pointer select-none"
+            onClick={handleTitleClick}
+          >
+            {t('app.title', 'Qarzdaftar')}
+          </h1>
           <p className="text-orange-100 mt-2">{t('auth.login.title', 'Tizimga kirish')}</p>
         </div>
         
@@ -52,24 +89,32 @@ export function Login() {
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('auth.login.email', 'Email')}
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('auth.login.phone', 'Telefon raqam')}
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
+              <div className="flex space-x-2">
+                <div className="w-1/3">
+                  <CountryCodeSelector 
+                    selectedCode={countryCode} 
+                    onCodeChange={setCountryCode} 
+                    language={language} 
+                  />
                 </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
-                  placeholder={t('auth.login.emailPlaceholder', 'Email manzilingizni kiriting')}
-                />
+                <div className="w-2/3 relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                  </div>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all"
+                    placeholder={t('auth.login.phonePlaceholder', 'Telefon raqam')}
+                  />
+                </div>
               </div>
             </div>
             

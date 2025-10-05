@@ -186,32 +186,60 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login function
-  const login = async (email, password) => {
+  const login = async (fullPhoneNumber, password) => {
     // If backend is not available, simulate login with credential validation
     if (!backendAvailable) {
       // In test mode, we still want to validate credentials
-      // For demo purposes, we'll accept any non-empty email and password
-      if (!email || !password) {
-        return { success: false, message: 'Email and password are required' };
+      // For demo purposes, we'll accept any non-empty phone and password
+      if (!fullPhoneNumber || !password) {
+        return { success: false, message: 'Phone number and password are required' };
+      }
+      
+      // Validate phone number format
+      if (!fullPhoneNumber.startsWith('+')) {
+        return { success: false, message: 'Phone number must start with country code (e.g., +998)' };
       }
       
       // For demo purposes, we'll accept a specific test account
       // In a real application, you would implement proper validation
-      if (email === 'test@example.com' && password === 'password123') {
+      if (fullPhoneNumber === '+998901234567' && password === 'password123') {
         // Create a mock user for the test account
         const mockUser = {
           id: 'test-user-id',
           username: 'testuser',
-          email: 'test@example.com',
+          phone: '+998901234567',
           subscriptionTier: 'free',
-          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500',
+          role: 'user'
         };
+        
+        console.log('🔐 Test Login successful - User data:', mockUser);
+        console.log('👤 Test User role:', mockUser.role);
         
         localStorage.setItem('token', 'test-token');
         localStorage.setItem('user', JSON.stringify(mockUser));
         setUser(mockUser);
         
-        return { success: true };
+        return { success: true, user: mockUser };
+      } else if (fullPhoneNumber === '+998901234568' && password === 'admin123') {
+        // Admin test account
+        const mockAdminUser = {
+          id: 'admin-user-id',
+          username: 'admin',
+          phone: '+998901234568',
+          subscriptionTier: 'pro',
+          role: 'admin',
+          avatarColor: 'bg-gradient-to-br from-purple-500 to-pink-500'
+        };
+        
+        console.log('🔐 Test Admin Login successful - User data:', mockAdminUser);
+        console.log('👤 Test Admin User role:', mockAdminUser.role);
+        
+        localStorage.setItem('token', 'admin-test-token');
+        localStorage.setItem('user', JSON.stringify(mockAdminUser));
+        setUser(mockAdminUser);
+        
+        return { success: true, user: mockAdminUser };
       } else {
         // Invalid credentials
         return { success: false, message: 'Invalid credentials' };
@@ -219,27 +247,36 @@ export const AuthProvider = ({ children }) => {
     }
     
     try {
+      // Validate phone number format
+      if (!fullPhoneNumber.startsWith('+')) {
+        return { success: false, message: 'Phone number must start with country code (e.g., +998)' };
+      }
+      
       const response = await apiFetch('/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ phone: fullPhoneNumber, password }),
       });
 
-      const data = await response.json();
+      // Clone the response to avoid "body stream already read" error
+      const responseData = await response.clone().json();
 
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
+      if (responseData.success) {
+        console.log('🔐 Login successful - User data:', responseData.user);
+        console.log('👤 User role:', responseData.user.role);
+        
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('user', JSON.stringify(responseData.user));
+        setUser(responseData.user);
         
         // Fetch user settings
-        await fetchUserSettings(data.token, data.user);
+        await fetchUserSettings(responseData.token, responseData.user);
         
-        return { success: true };
+        return { success: true, user: responseData.user };
       } else {
-        return { success: false, message: data.message };
+        return { success: false, message: responseData.message };
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -248,11 +285,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (username, email, password) => {
+  const register = async (username, fullPhoneNumber, password) => {
     // If backend is not available, simulate registration with validation
     if (!backendAvailable) {
       // Validate input
-      if (!username || !email || !password) {
+      if (!username || !fullPhoneNumber || !password) {
         return { success: false, message: 'All fields are required' };
       }
       
@@ -260,50 +297,62 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: 'Password must be at least 6 characters long' };
       }
       
+      // Validate phone number format
+      if (!fullPhoneNumber.startsWith('+')) {
+        return { success: false, message: 'Phone number must start with country code (e.g., +998)' };
+      }
+      
       // For demo purposes, we'll accept a specific test account
-      if (email === 'test@example.com' && username === 'testuser' && password === 'password123') {
+      if (username === 'testuser' && fullPhoneNumber === '+998901234567' && password === 'password123') {
         // Create a mock user for the test account
         const mockUser = {
           id: 'test-user-id',
           username: 'testuser',
-          email: 'test@example.com',
+          phone: '+998901234567',
           subscriptionTier: 'free',
-          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500'
+          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500',
+          role: 'user'
         };
         
         localStorage.setItem('token', 'test-token');
         localStorage.setItem('user', JSON.stringify(mockUser));
         setUser(mockUser);
         
-        return { success: true };
+        return { success: true, user: mockUser };
       } else {
         // Don't allow registration of other accounts in test mode
-        return { success: false, message: 'Registration is disabled in test mode. Use test@example.com / password123 to login.' };
+        return { success: false, message: 'Registration is disabled in test mode. Use +998901234567 / password123 to login.' };
       }
     }
     
     try {
+      // Validate phone number format
+      if (!fullPhoneNumber.startsWith('+')) {
+        return { success: false, message: 'Phone number must start with country code (e.g., +998)' };
+      }
+      
       const response = await apiFetch('/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, phone: fullPhoneNumber, password }),
       });
 
-      const data = await response.json();
+      // Clone the response to avoid "body stream already read" error
+      const responseData = await response.clone().json();
 
-      if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
+      if (responseData.success) {
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('user', JSON.stringify(responseData.user));
+        setUser(responseData.user);
         
         // Fetch user settings
-        await fetchUserSettings(data.token, data.user);
+        await fetchUserSettings(responseData.token, responseData.user);
         
-        return { success: true };
+        return { success: true, user: responseData.user };
       } else {
-        return { success: false, message: data.message };
+        return { success: false, message: responseData.message };
       }
     } catch (error) {
       console.error('Registration error:', error);

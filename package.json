@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "concurrently \"npm run dev\" \"cd backend && node server.js\"",
+    "dev:full": "concurrently \"npm run dev\" \"cd backend && npm install && node server.js\"",
     "build": "vite build",
     "preview": "vite preview"
   },

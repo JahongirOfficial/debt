@@ -36,19 +36,42 @@
     "settings": "Sozlamalar"
   },
   "auth": {
-    "login": "Kirish",
-    "register": "Ro'yxatdan o'tish",
+    "login": {
+      "title": "Tizimga kirish",
+      "phone": "Telefon raqam",
+      "phonePlaceholder": "Telefon raqamingiz",
+      "password": "Parol",
+      "passwordPlaceholder": "Parolingizni kiriting",
+      "rememberMe": "Eslab qolish",
+      "forgotPassword": "Parolni unutdingizmi?",
+      "button": "Kirish",
+      "loggingIn": "Kirish...",
+      "allFieldsRequired": "Barcha maydonlar to'ldirilishi shart",
+      "noAccount": "Hisobingiz yo'qmi?",
+      "registerLink": "Ro'yxatdan o'ting",
+      "invalidCredentials": "Noto'g'ri hisob ma'lumotlari"
+    },
+    "register": {
+      "title": "Ro'yxatdan o'tish",
+      "username": "Foydalanuvchi nomi",
+      "usernamePlaceholder": "Foydalanuvchi nomini kiriting",
+      "phone": "Telefon raqam",
+      "phonePlaceholder": "Telefon raqamingiz",
+      "password": "Parol",
+      "passwordPlaceholder": "Parolni kiriting",
+      "confirmPassword": "Parolni tasdiqlash",
+      "confirmPasswordPlaceholder": "Parolni qayta kiriting",
+      "button": "Ro'yxatdan o'tish",
+      "registering": "Ro'yxatdan o'tish...",
+      "allFieldsRequired": "Barcha maydonlar to'ldirilishi shart",
+      "passwordTooShort": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",
+      "passwordsDoNotMatch": "Parollar mos kelmaydi",
+      "haveAccount": "Hisobingiz bormi?",
+      "loginLink": "Tizimga kiring",
+      "registrationSuccess": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi",
+      "invalidCredentials": "Noto'g'ri hisob ma'lumotlari"
+    },
     "logout": "Chiqish",
-    "username": "Foydalanuvchi nomi",
-    "email": "Email",
-    "password": "Parol",
-    "confirmPassword": "Parolni tasdiqlash",
-    "alreadyHaveAccount": "Hisobingiz bormi?",
-    "dontHaveAccount": "Hisobingiz yo'qmi?",
-    "loginHere": "Bu yerda kiring",
-    "registerHere": "Bu yerda ro'yxatdan o'ting",
-    "invalidCredentials": "Noto'g'ri hisob ma'lumotlari",
-    "registrationSuccess": "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi",
     "logoutSuccess": "Chiqish muvaffaqiyatli yakunlandi"
   },
   "dashboard": {
@@ -146,10 +169,10 @@
     "historyWillBeCreated": "Qarzni tahrirlash yoki to'lash orqali tarix yaratiladi",
     "amountChangedFrom": "Miqdor o'zgardi:",
     "amountAdded": "qo'shildi",
-    "amountPaid": "to'landi",
+    "amountPaid": "To'landi",
     "amountUnchanged": "Miqdor o'zgarmadi",
     "added": "qo'shildi",
-    "paid": "to'landi",
+    "paid": "To'landi",
     "to": "ga",
     "action": {
       "created": "Yaratilgan",
@@ -161,8 +184,8 @@
     "history": {
       "createdDescription": "{{creditor}} uchun {{amount}} qarz yaratildi",
       "amountIncreased": "{{amount}} qo'shildi",
-      "amountDecreased": "{{amount}} to'landi",
-      "amountPaid": "{{amount}} to'landi",
+      "amountDecreased": "{{amount}} To'landi",
+      "amountPaid": "{{amount}} To'landi",
       "amountUnchanged": "Qarz miqdori o'zgartirilmadi",
       "markedAsPaid": "Qarz to'langan deb belgilandi",
       "deleted": "Qarz o'chirildi"
@@ -389,9 +412,12 @@
     "free": "Bepul",
     "standard": "Standart",
     "pro": "Pro",
-    "profile": "Profil",
-    "email": "Email",
-    "joined": "Qo'shilgan",
+    "profile": {
+      "title": "Profil",
+      "username": "Foydalanuvchi nomi",
+      "phone": "Telefon raqam",
+      "joined": "Qo'shilgan"
+    },
     "logout": "Chiqish",
     "user": {
       "title": "Foydalanuvchi ma'lumotlari"

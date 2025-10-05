@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /#/login
+Disallow: /#/register
+Disallow: /#/dashboard
+Disallow: /#/debts
+Disallow: /#/calculator
+Disallow: /#/ratings
+Disallow: /#/analytics
+Disallow: /#/reports
+Disallow: /#/sms-notifications
+Disallow: /#/settings
+
+Sitemap: https://qarzdaftar.uz/sitemap.xml
