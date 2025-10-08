@@ -15,8 +15,8 @@ export function PricingManagement() {
 
   const planColors = {
     'Bepul': 'from-gray-500 to-gray-600',
-    'Standart': 'from-blue-500 to-blue-600',
-    'Professional': 'from-purple-500 to-purple-600'
+    'Standart': 'from-orange-500 to-orange-600',
+    'Pro': 'from-purple-500 to-purple-600'
   };
 
   useEffect(() => {

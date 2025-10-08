@@ -396,6 +396,46 @@
     "upgradePrompt": "Tarifni yangilash funksiyasi tez orada qo'shiladi",
     "upgradeNow": "Hoziroq yangilang"
   },
+  "pricing": {
+    "title": "Tarif rejalari",
+    "subtitle": "O'zingizga mos tarifni tanlang",
+    "month": "so'm",
+    "popular": "Eng ommabop",
+    "currentPlan": "Joriy tarif",
+    "upgrade": "Tarifni yangilash",
+    "oneTime": "Bir martalik",
+    "free": {
+      "name": "Bepul",
+      "feature1": "20 ta qarzni boshqarish",
+      "feature2": "Texnik qo'llab-quvvatlash",
+
+      "feature4": "Telegram eslatmalar",
+      "feature5": "SMS xabar xizmati",
+      "feature6": "5 ta AI post dizayn"
+    },
+    "standard": {
+      "name": "Standart",
+      "feature1": "150 ta qarzni boshqarish",
+      "feature2": "Kunlik Excel hisobotlar",
+
+      "feature4": "Telegram eslatmalar",
+      "feature5": "Maxsus qo'llab-quvvatlash",
+      "feature6": "SMS xabar xizmati",
+      "feature7": "15 ta AI post dizayn",
+      "feature8": "1 oylik marketing plan"
+    },
+    "pro": {
+      "name": "Pro",
+      "feature1": "Cheksiz qarzni boshqarish",
+
+      "feature3": "Kunlik Excel hisobotlar",
+      "feature4": "Telegram eslatmalar",
+      "feature5": "24/7 qo'llab-quvvatlash",
+      "feature6": "Kengaytirilgan SMS xizmati",
+      "feature7": "25 ta AI post dizayn",
+      "feature8": "3 oylik kengaytirilgan marketing plan"
+    }
+  },
   "settings": {
     "title": "Sozlamalar",
     "subtitle": "Ilova sozlamalarini boshqaring",

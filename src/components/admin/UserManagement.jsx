@@ -14,6 +14,8 @@ export function UserManagement() {
     limit: 10,
     total: 0
   });
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -33,6 +35,20 @@ export function UserManagement() {
 
     return () => clearTimeout(timeoutId);
   }, [filters.search, filters.status, filters.subscription]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest('.relative')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
 
   const fetchUsers = async () => {
     try {
@@ -71,7 +87,7 @@ export function UserManagement() {
 
       // Optimistic update - darhol UI'ni yangilaymiz
       const originalUsers = [...users];
-      setUsers(users.map(user => 
+      setUsers(users.map(user =>
         (user.id || user._id) === userId ? { ...user, status: newStatus } : user
       ));
 
@@ -106,7 +122,7 @@ export function UserManagement() {
 
       // Optimistic update - darhol UI'ni yangilaymiz
       const originalUsers = [...users];
-      setUsers(users.map(user => 
+      setUsers(users.map(user =>
         (user.id || user._id) === userId ? { ...user, subscriptionTier: newSubscription } : user
       ));
 
@@ -132,15 +148,63 @@ export function UserManagement() {
     }
   };
 
+  const deleteUser = async (userId) => {
+    try {
+      if (!userId || userId === 'undefined') {
+        console.error('Invalid user ID:', userId);
+        return;
+      }
+
+      const response = await apiFetch(`/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Remove user from local state
+        setUsers(users.filter(user => (user.id || user._id) !== userId));
+        setDeleteConfirm(null);
+        setOpenDropdown(null);
+
+        // Update pagination total
+        setPagination(prev => ({ ...prev, total: prev.total - 1 }));
+      } else {
+        console.error('Failed to delete user');
+        alert('Foydalanuvchini o\'chirishda xatolik yuz berdi');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Server bilan bog\'lanishda xatolik');
+    }
+  };
+
+  const handleDeleteClick = (userId, username) => {
+    setDeleteConfirm({ userId, username });
+    setOpenDropdown(null);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteUser(deleteConfirm.userId);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
-      active: { 
-        color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200', 
+      active: {
+        color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
         text: 'Faol',
         icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
       },
-      suspended: { 
-        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', 
+      suspended: {
+        color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
         text: 'Bloklangan',
         icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
       }
@@ -158,18 +222,18 @@ export function UserManagement() {
 
   const getSubscriptionBadge = (subscription) => {
     const subConfig = {
-      free: { 
-        color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200', 
+      free: {
+        color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
         text: 'Bepul',
         icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
       },
-      standard: { 
-        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200', 
+      standard: {
+        color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
         text: 'Standart',
         icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z'
       },
-      pro: { 
-        color: 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 dark:from-purple-900 dark:to-pink-900 dark:text-purple-200 border border-purple-200 dark:border-purple-700', 
+      pro: {
+        color: 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 dark:from-purple-900 dark:to-pink-900 dark:text-purple-200 border border-purple-200 dark:border-purple-700',
         text: 'Professional',
         icon: 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z'
       }
@@ -195,7 +259,7 @@ export function UserManagement() {
             <div className="h-4 bg-white bg-opacity-20 rounded w-1/2"></div>
           </div>
         </div>
-        
+
         {/* Filters skeleton */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
           <div className="animate-pulse">
@@ -210,7 +274,7 @@ export function UserManagement() {
             </div>
           </div>
         </div>
-        
+
         {/* Users list skeleton */}
         <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -282,7 +346,7 @@ export function UserManagement() {
             <span>Qidirish va filtrlash</span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Qidirish</label>
@@ -306,7 +370,7 @@ export function UserManagement() {
               )}
             </div>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Holat</label>
             <select
@@ -319,7 +383,7 @@ export function UserManagement() {
               <option value="suspended">Bloklangan</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tarif</label>
             <select
@@ -346,7 +410,7 @@ export function UserManagement() {
             </div>
           </div>
         </div>
-        
+
         <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {users.map((user) => (
             <div key={user.id || user._id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
@@ -385,7 +449,7 @@ export function UserManagement() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
                   <div className="flex flex-col space-y-2">
                     <div className="relative">
@@ -422,7 +486,7 @@ export function UserManagement() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col space-y-2">
                     <button className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors duration-200">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -430,11 +494,35 @@ export function UserManagement() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                       </svg>
                     </button>
-                    <button className="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+
+                    {/* Dropdown Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenDropdown(openDropdown === (user.id || user._id) ? null : (user.id || user._id))}
+                        className="p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+
+                      {/* Dropdown Content */}
+                      {openDropdown === (user.id || user._id) && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                          <div className="py-1">
+                            <button
+                              onClick={() => handleDeleteClick(user.id || user._id, user.username)}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 transition-colors duration-200 flex items-center"
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                              O'chirish
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -493,11 +581,11 @@ export function UserManagement() {
                   </svg>
                   Oldingi
                 </button>
-                
+
                 <div className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300">
                   {pagination.page} / {Math.ceil(pagination.total / pagination.limit)}
                 </div>
-                
+
                 <button
                   onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                   disabled={pagination.page * pagination.limit >= pagination.total}
@@ -509,6 +597,46 @@ export function UserManagement() {
                   </svg>
                 </button>
               </nav>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900 rounded-full">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+              Foydalanuvchini o'chirish
+            </h3>
+
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+              <span className="font-medium">{deleteConfirm.username}</span> foydalanuvchisini o'chirishni xohlaysizmi?
+              Bu amal qaytarib bo'lmaydi va barcha ma'lumotlar o'chib ketadi.
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200 font-medium"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                O'chirish
+              </button>
             </div>
           </div>
         </div>

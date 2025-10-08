@@ -7,9 +7,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:full": "concurrently \"npm run dev\" \"cd backend && npm install && node server.js\"",
+    "dev:full": "concurrently --names \"FRONTEND,BACKEND\" --prefix-colors \"cyan,yellow\" \"npm run dev\" \"npm run dev:backend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:telegram": "cd backend && npm run test:telegram",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install:all": "npm install && cd backend && npm install"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

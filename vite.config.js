@@ -18,6 +18,13 @@ export default defineConfig({
   server: {
     port: 5173, // Explicitly set the port
     host: 'localhost', // Ensure it binds to localhost
-    open: true // Automatically open browser
+    open: true, // Automatically open browser
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5002',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   }
 })

@@ -6,6 +6,7 @@ import { useDebts } from '../utils/DebtContext';
 import { useAuth } from '../utils/AuthContext';
 import { SkeletonLoader } from './SkeletonLoader';
 
+
 export function QarzdaftarDashboard() {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
   const [currency] = useStoredState('qarzdaftar_currency', 'UZS');
@@ -14,6 +15,7 @@ export function QarzdaftarDashboard() {
   const { user, settings } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
 
+
   // Update time every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -21,6 +23,8 @@ export function QarzdaftarDashboard() {
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+
 
   // Show loading state
   if (loading) {
@@ -92,6 +96,7 @@ export function QarzdaftarDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+
       {/* Modern Header with Greeting */}
       <div className={`relative overflow-hidden rounded-3xl p-8 ${settings.theme === 'dark'
         ? 'bg-gradient-to-br from-slate-800 via-slate-900 to-zinc-900 border border-slate-700/50'

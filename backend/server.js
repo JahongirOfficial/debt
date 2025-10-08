@@ -5,6 +5,10 @@ import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import TelegramBotHandler from './services/TelegramBotHandler.js';
+import DailyReportService from './services/DailyReportService.js';
+import authRoutes from './routes/auth.js';
+import debtRoutes from './routes/debts.js';
 
 dotenv.config();
 
@@ -24,6 +28,10 @@ mongoose.connect(MONGODB_URI, {
 })
   .then(() => {
     console.log('Connected to MongoDB successfully');
+    // Setup database indexes
+    setupDatabaseIndexes();
+    // Initialize Telegram bot
+    initializeTelegramBot();
     // Serverni ishga tushirish
     startServer();
   })
@@ -71,6 +79,68 @@ function startServer() {
       console.error('Server error:', err);
     }
   });
+
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    if (telegramBotHandler) {
+      console.log('Stopping Telegram bot...');
+      telegramBotHandler.stopBot();
+    }
+    if (dailyReportService) {
+      console.log('Stopping daily report service...');
+      // Daily report service doesn't need explicit stopping as cron jobs will be cleaned up
+    }
+    server.close(() => {
+      console.log('Server closed');
+      mongoose.connection.close().then(() => {
+        console.log('Database connection closed');
+        process.exit(0);
+      });
+    });
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    if (telegramBotHandler) {
+      console.log('Stopping Telegram bot...');
+      telegramBotHandler.stopBot();
+    }
+    if (dailyReportService) {
+      console.log('Stopping daily report service...');
+      // Daily report service doesn't need explicit stopping as cron jobs will be cleaned up
+    }
+    server.close(() => {
+      console.log('Server closed');
+      mongoose.connection.close().then(() => {
+        console.log('Database connection closed');
+        process.exit(0);
+      });
+    });
+  });
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    if (telegramBotHandler) {
+      telegramBotHandler.stopBot();
+    }
+    if (dailyReportService) {
+      // Daily report service cleanup
+    }
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    if (telegramBotHandler) {
+      telegramBotHandler.stopBot();
+    }
+    if (dailyReportService) {
+      // Daily report service cleanup
+    }
+    process.exit(1);
+  });
 }
 
 // User Schema (MongoDB ulangan bo'lsa)
@@ -112,6 +182,27 @@ const userSchema = new mongoose.Schema({
   avatarColor: {
     type: String,
     default: null
+  },
+  // Telegram integration fields
+  telegramId: {
+    type: String,
+    unique: true,
+    sparse: true,
+    index: true
+  },
+  telegramUsername: {
+    type: String,
+    trim: true
+  },
+  telegramConnectedAt: {
+    type: Date
+  },
+  telegramNotificationsEnabled: {
+    type: Boolean,
+    default: true
+  },
+  lastTelegramModalShown: {
+    type: Date
   }
 }, {
   timestamps: true
@@ -357,6 +448,55 @@ try {
   DebtAdjustment = mongoose.model('DebtAdjustment');
 }
 
+// Telegram Session Schema (MongoDB ulangan bo'lsa)
+const telegramSessionSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  telegramId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  sessionToken: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
+  connectedAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastActivity: {
+    type: Date,
+    default: Date.now
+  },
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    index: true
+  }
+}, {
+  timestamps: true
+});
+
+// TelegramSession model (MongoDB ulangan bo'lsa)
+let TelegramSession;
+try {
+  TelegramSession = mongoose.model('TelegramSession', telegramSessionSchema);
+} catch (error) {
+  TelegramSession = mongoose.model('TelegramSession');
+}
+
 // Creditor Rating Schema (MongoDB ulangan bo'lsa)
 const creditorRatingSchema = new mongoose.Schema({
   userId: {
@@ -418,9 +558,99 @@ try {
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'qarzdaftar_jwt_secret_key';
 
+// Initialize Telegram Bot
+const initializeTelegramBot = () => {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('⚠️  Telegram bot token not found in environment variables');
+    console.log('   Add TELEGRAM_BOT_TOKEN to your .env file to enable Telegram bot');
+    return;
+  }
+
+  if (mongoose.connection.readyState !== 1) {
+    console.log('⚠️  Database not connected, Telegram bot will be initialized after DB connection');
+    return;
+  }
+
+  try {
+    // Stop existing bot if running
+    if (telegramBotHandler) {
+      console.log('Stopping existing Telegram bot...');
+      telegramBotHandler.stopBot();
+      telegramBotHandler = null;
+    }
+
+    const models = {
+      User,
+      TelegramSession,
+      Debt,
+      DebtHistory
+    };
+    
+    const useWebhook = process.env.TELEGRAM_USE_WEBHOOK === 'true';
+    telegramBotHandler = new TelegramBotHandler(TELEGRAM_BOT_TOKEN, models, useWebhook);
+    console.log('✅ Telegram bot handler initialized successfully');
+    console.log(`🤖 Bot username: @${process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot'}`);
+    console.log(`📡 Mode: ${useWebhook ? 'Webhook' : 'Polling'}`);
+    
+    // Initialize Daily Report Service
+    dailyReportService = new DailyReportService(models, telegramBotHandler);
+    console.log('✅ Daily report service initialized successfully');
+  } catch (error) {
+    console.error('❌ Error initializing Telegram bot:', error);
+    console.log('   Check your TELEGRAM_BOT_TOKEN and try again');
+  }
+};
+
+// Database indexes setup
+const setupDatabaseIndexes = async () => {
+  try {
+    if (mongoose.connection.readyState === 1) {
+      // User collection indexes
+      try {
+        await User.collection.createIndex({ telegramId: 1 }, { sparse: true });
+        console.log('TelegramId index created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('TelegramId index already exists');
+      }
+      
+      // TelegramSession collection indexes
+      try {
+        await TelegramSession.collection.createIndex({ userId: 1 });
+        await TelegramSession.collection.createIndex({ telegramId: 1 }, { unique: true });
+        await TelegramSession.collection.createIndex({ sessionToken: 1 }, { unique: true });
+        await TelegramSession.collection.createIndex({ isActive: 1 });
+        await TelegramSession.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+        console.log('TelegramSession indexes created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('TelegramSession indexes already exist');
+      }
+      
+      // Debt collection indexes (if not already exist)
+      try {
+        await Debt.collection.createIndex({ userId: 1, status: 1 });
+        await Debt.collection.createIndex({ userId: 1, debtDate: 1 });
+        console.log('Debt indexes created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('Debt indexes already exist');
+      }
+      
+      console.log('Database indexes setup completed successfully');
+    }
+  } catch (error) {
+    console.error('Error creating database indexes:', error);
+  }
+};
+
 // Telegram Bot Configuration
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
+// Telegram Bot Handler instance
+let telegramBotHandler = null;
+let dailyReportService = null;
 
 // Telegram bot notification function
 const sendTelegramNotification = async (message) => {
@@ -812,6 +1042,14 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
     res.json({
       success: true,
       user: {
@@ -836,12 +1074,185 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 
 // Salomatlik tekshiruvi
 app.get('/api/health', (req, res) => {
+  const botStatus = telegramBotHandler ? telegramBotHandler.getBotStatus() : null;
+  
   res.json({
     success: true,
     message: 'Backend server is running',
     timestamp: new Date().toISOString(),
-    mongodb: mongoose.connection.readyState ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState ? 'connected' : 'disconnected',
+    telegramBot: botStatus
   });
+});
+
+// Telegram connection status tekshirish
+app.get('/api/telegram/status', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      connected: false,
+      telegramId: null,
+      connectedAt: null
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.json({
+        success: true,
+        connected: false,
+        telegramId: null,
+        telegramUsername: null,
+        connectedAt: null
+      });
+    }
+    
+    res.json({
+      success: true,
+      connected: !!user.telegramId,
+      telegramId: user.telegramId,
+      telegramUsername: user.telegramUsername,
+      connectedAt: user.telegramConnectedAt
+    });
+  } catch (error) {
+    console.error('Telegram status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error checking Telegram status'
+    });
+  }
+});
+
+// Telegram connection token yaratish
+app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      token: `testuser_${Date.now()}`,
+      botUsername: 'qarzdaftarchabot',
+      telegramUrl: `https://t.me/qarzdaftarchabot?start=testuser_${Date.now()}`
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Connection token yaratish (username yoki user ID)
+    const connectionToken = user.username || user._id.toString();
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot';
+    const telegramUrl = `https://t.me/${botUsername}?start=${connectionToken}`;
+
+    console.log(`Generated connection token for user ${user.username}: ${connectionToken}`);
+
+    res.json({
+      success: true,
+      token: connectionToken,
+      botUsername: botUsername,
+      telegramUrl: telegramUrl
+    });
+  } catch (error) {
+    console.error('Generate token error:', error);
+    
+    // MongoDB CastError (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Server error generating token'
+    });
+  }
+});
+
+// Telegram connection ni uzish
+app.post('/api/telegram/disconnect', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Telegram disconnected successfully (test mode)'
+    });
+  }
+
+  try {
+    const user = await User.findById(req.user.userId);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Telegram ma'lumotlarini o'chirish
+    user.telegramId = null;
+    user.telegramUsername = null;
+    user.telegramConnectedAt = null;
+    await user.save();
+
+    // Sessionlarni o'chirish
+    await TelegramSession.deleteMany({ userId: user._id });
+
+    res.json({
+      success: true,
+      message: 'Telegram disconnected successfully'
+    });
+  } catch (error) {
+    console.error('Telegram disconnect error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error disconnecting Telegram'
+    });
+  }
+});
+
+// Manual daily report generation (admin only)
+app.post('/api/telegram/generate-report', authenticateToken, async (req, res) => {
+  try {
+    // Check if user is admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin access required'
+      });
+    }
+
+    if (!dailyReportService) {
+      return res.status(503).json({
+        success: false,
+        message: 'Daily report service not available'
+      });
+    }
+
+    // Generate manual report
+    await dailyReportService.generateManualReport();
+
+    res.json({
+      success: true,
+      message: 'Daily report generated and sent successfully'
+    });
+  } catch (error) {
+    console.error('Manual report generation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating daily report'
+    });
+  }
 });
 
 // Qarzlarni olish
@@ -1924,6 +2335,91 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
   }
 });
 
+// Delete User
+app.delete('/api/admin/users/:id', authenticateAdmin, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'User deleted successfully (test mode)'
+    });
+  }
+
+  try {
+    const userId = req.params.id;
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Prevent admin from deleting themselves
+    if (userId === req.user.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot delete your own account'
+      });
+    }
+
+    // Delete user's related data
+    await Promise.all([
+      // Delete user's debts
+      Debt.deleteMany({ userId: userId }),
+      // Delete user's debt history
+      DebtHistory.deleteMany({ userId: userId }),
+      // Delete user's settings
+      UserSettings.deleteMany({ userId: userId }),
+      // Delete user's debt adjustments
+      DebtAdjustment.deleteMany({ userId: userId }),
+      // Delete user's creditor ratings
+      CreditorRating.deleteMany({ userId: userId }),
+      // Delete user's telegram sessions
+      TelegramSession.deleteMany({ userId: userId })
+    ]);
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    // Send Telegram notification about user deletion
+    const deletionDate = formatUzbekDate(new Date());
+    const telegramMessage = `🗑️ <b>Foydalanuvchi o'chirildi!</b>\n\n` +
+      `👤 <b>Foydalanuvchi:</b> ${user.username}\n` +
+      `📱 <b>Telefon:</b> ${user.phone}\n` +
+      `📅 <b>Sana:</b> ${deletionDate}\n` +
+      `👨‍💼 <b>Admin:</b> ${req.user.username}\n\n` +
+      `#foydalanuvchi_ochirildi #admin_action`;
+
+    // Send notification asynchronously
+    sendTelegramNotification(telegramMessage).catch(error => {
+      console.error('Failed to send Telegram notification:', error);
+    });
+
+    res.json({
+      success: true,
+      message: 'User and all related data deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    
+    // MongoDB CastError (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting user'
+    });
+  }
+});
+
 // Get Pricing Plans
 app.get('/api/admin/pricing', authenticateAdmin, async (req, res) => {
   try {
@@ -2266,6 +2762,94 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
       success: false,
       message: 'Server error fetching analytics'
     });
+  }
+});
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/debts', debtRoutes);
+
+// Telegram webhook endpoint
+app.post('/api/telegram/webhook', async (req, res) => {
+  try {
+    console.log('Telegram webhook received:', JSON.stringify(req.body, null, 2));
+    
+    const update = req.body;
+    
+    if (update.message) {
+      const message = update.message;
+      const chatId = message.chat.id;
+      const text = message.text;
+      
+      console.log(`Message from ${message.from.username || message.from.first_name}: ${text}`);
+      
+      // Handle the message using TelegramBotHandler
+      if (global.telegramBotHandler) {
+        await global.telegramBotHandler.handleUpdate(update);
+      }
+    }
+    
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Set webhook endpoint
+app.post('/api/telegram/set-webhook', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+    
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    
+    if (!TELEGRAM_BOT_TOKEN) {
+      return res.status(400).json({ error: 'Telegram bot token not configured' });
+    }
+    
+    const webhookUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`;
+    
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        url: url
+      })
+    });
+    
+    const result = await response.json();
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Set webhook error:', error);
+    res.status(500).json({ error: 'Failed to set webhook' });
+  }
+});
+
+// Get webhook info
+app.get('/api/telegram/webhook-info', async (req, res) => {
+  try {
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    
+    if (!TELEGRAM_BOT_TOKEN) {
+      return res.status(400).json({ error: 'Telegram bot token not configured' });
+    }
+    
+    const webhookUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo`;
+    
+    const response = await fetch(webhookUrl);
+    const result = await response.json();
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Get webhook info error:', error);
+    res.status(500).json({ error: 'Failed to get webhook info' });
   }
 });
 

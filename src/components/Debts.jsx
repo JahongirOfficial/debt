@@ -38,7 +38,7 @@ export function QarzdaftarDebts() {
       const tier = user.subscriptionTier.toLowerCase();
       switch (tier) {
         case 'pro':
-          return 1000;
+          return Infinity; // Unlimited for Pro tier
         case 'standard':
           return 150;
         case 'free':
@@ -137,8 +137,8 @@ export function QarzdaftarDebts() {
   const addDebt = async () => {
     if (!newDebt.creditor || !newDebt.amount) return;
 
-    // Check if user has reached the debt limit
-    if (debts.length >= userDebtLimit) {
+    // Check if user has reached the debt limit (skip for Pro tier with unlimited)
+    if (userDebtLimit !== Infinity && debts.length >= userDebtLimit) {
       // Instead of showing an alert, we'll let the user see the upgrade message
       return;
     }
@@ -606,8 +606,8 @@ export function QarzdaftarDebts() {
           </div>
           <button
             onClick={() => {
-              // Check if user has reached the debt limit
-              if (debts.length >= userDebtLimit) {
+              // Check if user has reached the debt limit (skip for Pro tier with unlimited)
+              if (userDebtLimit !== Infinity && debts.length >= userDebtLimit) {
                 // Instead of showing an alert, we'll let the user see the upgrade message
                 return;
               }
@@ -623,7 +623,7 @@ export function QarzdaftarDebts() {
         </div>
 
         {/* Show upgrade message when user has reached the debt limit */}
-        {debts.length >= userDebtLimit && (
+        {userDebtLimit !== Infinity && debts.length >= userDebtLimit && (
           <div className="mb-6 p-6 bg-yellow-50/80 dark:bg-yellow-900/30 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-2xl shadow-lg">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center">
@@ -636,7 +636,7 @@ export function QarzdaftarDebts() {
                   {t('debts.tierLimitTitle', 'Qarzlar cheklangan')}
                 </h4>
                 <p className="text-sm text-yellow-700 dark:text-yellow-300 leading-relaxed">
-                  {t('debts.tierLimitReached', `Siz ${userTier.charAt(0).toUpperCase() + userTier.slice(1)} tarifidasiz va ${userDebtLimit} ta qarz qo'shdingiz. Ko'proq qarz qo'shish uchun tarifni yangilang.`, { tier: userTier.charAt(0).toUpperCase() + userTier.slice(1), limit: userDebtLimit })}{' '}
+                  {t('debts.tierLimitReached', `Siz ${userTier.charAt(0).toUpperCase() + userTier.slice(1)} tarifidasiz va ${userDebtLimit === Infinity ? 'cheksiz' : userDebtLimit} ta qarz qo'shdingiz. Ko'proq qarz qo'shish uchun tarifni yangilang.`, { tier: userTier.charAt(0).toUpperCase() + userTier.slice(1), limit: userDebtLimit === Infinity ? 'cheksiz' : userDebtLimit })}{' '}
                   <button
                     className="inline-flex items-center text-orange-600 font-medium hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 transition-colors duration-200 underline decoration-2 underline-offset-2"
                     onClick={() => navigate('/pricing')}

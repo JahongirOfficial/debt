@@ -396,6 +396,46 @@
     "upgradePrompt": "Plan upgrade feature will be added soon",
     "upgradeNow": "Upgrade now"
   },
+  "pricing": {
+    "title": "Pricing Plans",
+    "subtitle": "Choose the plan that suits you",
+    "month": "som",
+    "popular": "Most Popular",
+    "currentPlan": "Current Plan",
+    "upgrade": "Upgrade Plan",
+    "oneTime": "One-time",
+    "free": {
+      "name": "Free",
+      "feature1": "Manage 20 debts",
+      "feature2": "Technical support",
+
+      "feature4": "Telegram notifications",
+      "feature5": "SMS message service",
+      "feature6": "5 AI post designs"
+    },
+    "standard": {
+      "name": "Standard",
+      "feature1": "Manage 150 debts",
+      "feature2": "Daily Excel reports",
+
+      "feature4": "Telegram notifications",
+      "feature5": "Priority support",
+      "feature6": "SMS message service",
+      "feature7": "15 AI post designs",
+      "feature8": "1 month marketing plan"
+    },
+    "pro": {
+      "name": "Pro",
+      "feature1": "Unlimited debt management",
+
+      "feature3": "Daily Excel reports",
+      "feature4": "Telegram notifications",
+      "feature5": "24/7 support",
+      "feature6": "Advanced SMS service",
+      "feature7": "25 AI post designs",
+      "feature8": "3 month advanced marketing plan"
+    }
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage application settings",

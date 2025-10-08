@@ -36,6 +36,9 @@ export function QarzdaftarSMSNotifications() {
   const t = useTranslation(language);
   const [activeTab, setActiveTab] = useState('settings');
   
+  // Check if user has access to SMS features
+  const hasAccess = user?.subscriptionTier && user.subscriptionTier !== 'free';
+  
   // Mock data for demonstration
   const smsStats = {
     sent: 45,

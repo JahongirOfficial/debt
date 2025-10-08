@@ -17,6 +17,7 @@ import { PricingManagement } from './components/admin/PricingManagement';
 import { Reports } from './components/admin/Reports';
 import { Analytics } from './components/admin/Analytics';
 import { ModernSidebar } from './components/ModernSidebar';
+import TelegramConnectionModal from './components/TelegramConnectionModal';
 
 import { useTranslation } from './utils/translationUtils';
 import { useLanguage } from './utils/LanguageContext.jsx';
@@ -108,6 +109,9 @@ export function QarzdaftarApp() {
 
   // State for modern suggestion notification
   const [showSuggestionNotification, setShowSuggestionNotification] = useState(false);
+
+  // State for Telegram connection modal
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
 
 
 
@@ -230,6 +234,52 @@ export function QarzdaftarApp() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show Telegram connection modal after 5 seconds if user hasn't connected
+  useEffect(() => {
+    const checkTelegramConnection = async () => {
+      if (!user || !user.id) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/telegram/status', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) return;
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) return;
+
+        const data = await response.json();
+        
+        if (data.success && !data.connected) {
+          // Check if modal was skipped in last 24 hours
+          const lastSkipped = localStorage.getItem('telegramModalSkipped');
+          const now = Date.now();
+          const oneDayInMs = 24 * 60 * 60 * 1000;
+          
+          if (!lastSkipped || (now - parseInt(lastSkipped)) > oneDayInMs) {
+            // Show modal after 5 seconds
+            const timer = setTimeout(() => {
+              setShowTelegramModal(true);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Telegram status:', error);
+      }
+    };
+
+    checkTelegramConnection();
+  }, [user]);
 
 
 
@@ -407,6 +457,16 @@ export function QarzdaftarApp() {
           </div>
         </div>
       )}
+
+      {/* Telegram Connection Modal */}
+      <TelegramConnectionModal
+        isOpen={showTelegramModal}
+        onClose={() => setShowTelegramModal(false)}
+        user={user}
+      />
+
+      {/* Debug: Manual modal trigger (remove in production) */}
+      {process.env.NODE_ENV === 'development' && null}
     </DebtProvider>
   );
 }

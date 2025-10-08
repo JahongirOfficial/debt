@@ -28,30 +28,34 @@ export function QarzdaftarPricingPlans() {
   const { language } = useLanguage();
   const t = useTranslation(language);
   const { user } = useAuth();
-  
+
   // Function to handle upgrade button click
   const handleUpgradeClick = () => {
     setIsModalOpen(true);
   };
-  
+
   // Function to close the modal
   const closeModal = () => {
     setIsModalOpen(false);
   };
-  
+
   // Get user's current tier
   const userTier = user && user.subscriptionTier ? user.subscriptionTier.toLowerCase() : 'free';
-  
+
   const plans = [
     {
-      name: t('settings.free', 'Bepul'),
+      name: t('pricing.free.name', 'Bepul'),
       price: '0',
-      period: t('pricing.month', 'oyiga'),
+      period: t('pricing.month', 'so\'m'),
       debtLimit: 20,
       features: [
-        t('pricing.feature1', '20 ta qarzni boshqarish'),
-        t('pricing.feature2', 'Asosiy eslatmalar'),
-        t('pricing.feature3', 'Telegram qo\'llab-quvvatlash')
+        t('pricing.free.feature1', '20 ta qarzni boshqarish'),
+        t('pricing.free.feature2', 'Texnik qo\'llab-quvvatlash'),
+        t('pricing.free.feature4', 'Telegram eslatmalar'),
+        t('pricing.free.feature5', 'SMS xabar xizmati')
+      ],
+      oneTimeFeatures: [
+        t('pricing.free.feature6', '5 ta AI post dizayn')
       ],
       cta: t('pricing.currentPlan', 'Joriy tarif'),
       isCurrent: userTier === 'free',
@@ -59,15 +63,20 @@ export function QarzdaftarPricingPlans() {
       color: 'gray'
     },
     {
-      name: t('settings.standard', 'Standart'),
-      price: '59,000',
-      period: t('pricing.month', 'oyiga'),
+      name: t('pricing.standard.name', 'Standart'),
+      price: '69,000',
+      period: t('pricing.month', 'so\'m'),
       debtLimit: 150,
       features: [
-        t('pricing.feature4', '150 ta qarzni boshqarish'),
-        t('pricing.feature5', 'Kengaytirilgan eslatmalar'),
-        t('pricing.feature6', 'Maxsus qo\'llab-quvvatlash'),
-        t('pricing.feature7', 'Hisobotlar')
+        t('pricing.standard.feature1', '150 ta qarzni boshqarish'),
+        t('pricing.standard.feature2', 'Kunlik Excel hisobotlar'),
+        t('pricing.standard.feature4', 'Telegram eslatmalar'),
+        t('pricing.standard.feature5', 'Maxsus qo\'llab-quvvatlash'),
+        t('pricing.standard.feature6', 'SMS xabar xizmati')
+      ],
+      oneTimeFeatures: [
+        t('pricing.standard.feature7', '15 ta AI post dizayn'),
+        t('pricing.standard.feature8', '1 oylik marketing plan')
       ],
       cta: t('pricing.upgrade', 'Tarifni yangilash'),
       isCurrent: userTier === 'standard',
@@ -75,16 +84,20 @@ export function QarzdaftarPricingPlans() {
       color: 'orange'
     },
     {
-      name: t('settings.pro', 'Professional'),
-      price: '129,000',
-      period: t('pricing.month', 'oyiga'),
-      debtLimit: 1000,
+      name: t('pricing.pro.name', 'Pro'),
+      price: '199,000',
+      period: t('pricing.month', 'so\'m'),
+      debtLimit: 'unlimited',
       features: [
-        t('pricing.feature8', '1000 ta qarzni boshqarish'),
-        t('pricing.feature9', 'Barcha eslatmalar turlari'),
-        t('pricing.feature10', '24/7 qo\'llab-quvvatlash'),
-        t('pricing.feature11', 'Kengaytirilgan hisobotlar'),
-        t('pricing.feature12', 'API kirish')
+        t('pricing.pro.feature1', 'Cheksiz qarzni boshqarish'),
+        t('pricing.pro.feature3', 'Kunlik Excel hisobotlar'),
+        t('pricing.pro.feature4', 'Telegram eslatmalar'),
+        t('pricing.pro.feature5', '24/7 qo\'llab-quvvatlash'),
+        t('pricing.pro.feature6', 'Kengaytirilgan SMS xizmati')
+      ],
+      oneTimeFeatures: [
+        t('pricing.pro.feature7', '25 ta AI post dizayn'),
+        t('pricing.pro.feature8', '3 oylik kengaytirilgan marketing plan')
       ],
       cta: t('pricing.upgrade', 'Tarifni yangilash'),
       isCurrent: userTier === 'pro',
@@ -105,7 +118,7 @@ export function QarzdaftarPricingPlans() {
         glow: 'ring-2 ring-blue-500/30 ring-offset-2 ring-offset-white dark:ring-offset-gray-900'
       };
     }
-    
+
     switch (plan.color) {
       case 'orange':
         return {
@@ -147,18 +160,16 @@ export function QarzdaftarPricingPlans() {
           {t('pricing.subtitle', 'O\'zingizga mos tarifni tanlang')}
         </p>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan, index) => {
           const styling = getPlanStyling(plan);
           return (
-            <div 
-              key={index} 
-              className={`relative rounded-2xl p-6 transition-all duration-500 hover:shadow-xl flex flex-col ${
-                styling.border
-              } ${styling.background} ${
-                plan.popular ? 'scale-105 z-10' : ''
-              }`}
+            <div
+              key={index}
+              className={`relative rounded-2xl p-6 transition-all duration-500 hover:shadow-xl flex flex-col ${styling.border
+                } ${styling.background} ${plan.popular ? 'scale-105 z-10' : ''
+                }`}
             >
               {plan.popular && !plan.isCurrent && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-4 py-1 rounded-full">
@@ -177,36 +188,66 @@ export function QarzdaftarPricingPlans() {
                   </h4>
                   <div className="mb-4">
                     <span className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">{plan.price}</span>
-                    <span className="text-gray-600 dark:text-gray-400"> UZS/{plan.period}</span>
+                    <span className="text-gray-600 dark:text-gray-400"> {plan.period}</span>
                   </div>
-                  <ul className="space-y-3 mb-8 flex-grow">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start">
-                        <svg 
-                          className="w-5 h-5 mr-3 text-green-500 flex-shrink-0 mt-0.5" 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24" 
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        <span className="text-gray-700 dark:text-gray-300 text-left">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  <div className="space-y-6 mb-8 flex-grow">
+                    {/* Regular Features */}
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-start">
+                          <svg
+                            className="w-5 h-5 mr-3 text-green-500 flex-shrink-0 mt-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+                          <span className="text-gray-700 dark:text-gray-300 text-left">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* One-time Features */}
+                    {plan.oneTimeFeatures && plan.oneTimeFeatures.length > 0 && (
+                      <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                        <h5 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3 flex items-center">
+                          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {t('pricing.oneTime', 'Bir martalik')}
+                        </h5>
+                        <ul className="space-y-3">
+                          {plan.oneTimeFeatures.map((feature, featureIndex) => (
+                            <li key={featureIndex} className="flex items-start">
+                              <svg
+                                className="w-5 h-5 mr-3 text-orange-500 flex-shrink-0 mt-0.5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                              </svg>
+                              <span className="text-gray-700 dark:text-gray-300 text-left">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="mt-auto">
                   <button
                     disabled={plan.isCurrent}
                     onClick={!plan.isCurrent ? handleUpgradeClick : undefined}
-                    className={`w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 relative ${
-                      plan.isCurrent 
-                        ? styling.buttonDisabled 
-                        : styling.button
-                    } ${
-                      !plan.isCurrent && plan.color === 'purple' ? 'pulse-border' : ''
-                    }`}
+                    className={`w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 relative ${plan.isCurrent
+                      ? styling.buttonDisabled
+                      : styling.button
+                      } ${!plan.isCurrent && plan.color === 'purple' ? 'pulse-border' : ''
+                      }`}
                   >
                     <span className="relative z-10">{plan.cta}</span>
                   </button>
@@ -216,7 +257,7 @@ export function QarzdaftarPricingPlans() {
           );
         })}
       </div>
-      
+
       {/* Upgrade Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -226,7 +267,7 @@ export function QarzdaftarPricingPlans() {
                 <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
                   Tarifni yangilash
                 </h3>
-                <button 
+                <button
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray00 dark:hover:text-gray-300"
                 >
@@ -235,12 +276,12 @@ export function QarzdaftarPricingPlans() {
                   </svg>
                 </button>
               </div>
-              
+
               <div className="mb-6">
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   Tarif o'zgartirish uchun murojat qiling:
                 </p>
-                
+
                 <div className="space-y-4">
                   {/* Phone Contact */}
                   <div className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
@@ -256,7 +297,7 @@ export function QarzdaftarPricingPlans() {
                       </a>
                     </div>
                   </div>
-                  
+
                   {/* Telegram Contact */}
                   <div className="flex items-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                     <div className="mr-4 p-3 bg-blue-100 dark:bg-blue-800 rounded-full">
@@ -273,7 +314,7 @@ export function QarzdaftarPricingPlans() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex justify-end">
                 <button
                   onClick={closeModal}

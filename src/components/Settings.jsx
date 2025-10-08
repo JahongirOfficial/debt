@@ -21,9 +21,9 @@ const getRandomAvatarColor = () => {
 // Function to get subscription tier with color
 const getSubscriptionTier = (tier, t) => {
   const tiers = {
-    free: { name: t('settings.subscription.free', 'Bepul'), color: 'bg-gray-500', textColor: 'text-gray-700' },
-    standard: { name: t('settings.subscription.standard', 'Standart'), color: 'bg-blue-500', textColor: 'text-blue-700' },
-    pro: { name: t('settings.subscription.pro', 'Pro'), color: 'bg-purple-500', textColor: 'text-purple-700' }
+    free: { name: t('pricing.free.name', 'Bepul'), color: 'bg-gray-500', textColor: 'text-gray-700' },
+    standard: { name: t('pricing.standard.name', 'Standart'), color: 'bg-orange-500', textColor: 'text-orange-700' },
+    pro: { name: t('pricing.pro.name', 'Pro'), color: 'bg-purple-500', textColor: 'text-purple-700' }
   };
   return tiers[tier] || tiers.free;
 };
