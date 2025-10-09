@@ -26,12 +26,12 @@ mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => {
+  .then(async () => {
     console.log('Connected to MongoDB successfully');
     // Setup database indexes
     setupDatabaseIndexes();
     // Initialize Telegram bot
-    initializeTelegramBot();
+    await initializeTelegramBot();
     // Serverni ishga tushirish
     startServer();
   })
@@ -559,7 +559,7 @@ try {
 const JWT_SECRET = process.env.JWT_SECRET || 'qarzdaftar_jwt_secret_key';
 
 // Initialize Telegram Bot
-const initializeTelegramBot = () => {
+const initializeTelegramBot = async () => {
   if (!TELEGRAM_BOT_TOKEN) {
     console.log('⚠️  Telegram bot token not found in environment variables');
     console.log('   Add TELEGRAM_BOT_TOKEN to your .env file to enable Telegram bot');
@@ -575,8 +575,10 @@ const initializeTelegramBot = () => {
     // Stop existing bot if running
     if (telegramBotHandler) {
       console.log('Stopping existing Telegram bot...');
-      telegramBotHandler.stopBot();
+      await telegramBotHandler.stopBot();
       telegramBotHandler = null;
+      // Wait a bit before creating new instance
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
     const models = {
@@ -1149,7 +1151,11 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
     }
 
     // Connection token yaratish (username yoki user ID)
-    const connectionToken = user.username || user._id.toString();
+    let connectionToken = user.username || user._id.toString();
+    
+    // Bo'sh joylarni pastgi chiziq bilan almashtirish (URL-safe qilish uchun)
+    connectionToken = connectionToken.replace(/\s+/g, '_');
+    
     const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot';
     const telegramUrl = `https://t.me/${botUsername}?start=${connectionToken}`;
 

@@ -23,13 +23,13 @@ class TelegramBotHandler {
       this.ensureTempDirectory();
 
       // Start bot with delay to avoid conflicts
-      setTimeout(() => {
+      setTimeout(async () => {
         if (this.useWebhook) {
           this.setupWebhook();
         } else {
-          this.startPolling();
+          await this.startPolling();
         }
-      }, 2000); // Increased delay to 2 seconds
+      }, 5000); // Increased delay to 5 seconds to avoid conflicts
 
       console.log('Telegram bot initialized successfully');
     } catch (error) {
@@ -38,29 +38,46 @@ class TelegramBotHandler {
     }
   }
 
-  startPolling() {
+  async startPolling() {
     try {
-      if (!this.isPolling) {
-        // First, try to stop any existing polling
-        this.bot.stopPolling().then(() => {
-          // Start polling after stopping
-          this.bot.startPolling();
-          this.isPolling = true;
-          console.log('✅ Telegram bot polling started');
-        }).catch((error) => {
-          // If stopping fails, try to start anyway
-          console.log('⚠️  Could not stop existing polling, trying to start anyway...');
-          try {
-            this.bot.startPolling();
-            this.isPolling = true;
-            console.log('✅ Telegram bot polling started');
-          } catch (startError) {
-            console.error('❌ Error starting polling:', startError.message);
-          }
-        });
+      if (this.isPolling) {
+        console.log('⚠️  Bot is already polling, skipping start');
+        return;
       }
+
+      console.log('🔄 Starting Telegram bot polling...');
+
+      // Force stop any existing polling first
+      try {
+        await this.bot.stopPolling({ cancel: true });
+        console.log('🛑 Stopped any existing polling');
+      } catch (stopError) {
+        console.log('⚠️  No existing polling to stop (expected)');
+      }
+
+      // Wait a moment then start
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Start polling
+      await this.bot.startPolling({ restart: true });
+      this.isPolling = true;
+      console.log('✅ Telegram bot polling started successfully');
+
     } catch (error) {
       console.error('❌ Error in startPolling:', error.message);
+      this.isPolling = false;
+
+      // If it's a 409 conflict, don't retry immediately
+      if (error.message && error.message.includes('409')) {
+        console.log('⚠️  409 conflict detected, will retry later');
+        return;
+      }
+
+      // For other errors, retry after delay
+      setTimeout(() => {
+        console.log('🔄 Retrying polling start...');
+        this.startPolling();
+      }, 5000);
     }
   }
 
@@ -119,14 +136,31 @@ class TelegramBotHandler {
 
       // Handle 409 Conflict error (multiple bot instances)
       if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-        console.log('⚠️  Multiple bot instances detected. Stopping current instance...');
-        this.stopBot();
+        console.log('⚠️  Multiple bot instances detected. Attempting to resolve...');
 
-        // Try to restart after a delay
-        setTimeout(() => {
-          console.log('🔄 Attempting to restart bot polling...');
-          this.startPolling();
-        }, 10000); // Wait 10 seconds before restart
+        // Force stop current polling
+        this.isPolling = false;
+
+        // Try to restart after a longer delay
+        setTimeout(async () => {
+          console.log('🔄 Attempting to restart bot polling after conflict...');
+          try {
+            // Force stop any existing polling first
+            await this.bot.stopPolling({ cancel: true });
+            console.log('🛑 Forced stop completed');
+
+            // Wait a bit more then restart
+            setTimeout(() => {
+              this.startPolling();
+            }, 3000);
+          } catch (stopError) {
+            console.log('⚠️  Stop error (expected):', stopError.message);
+            // Try to start anyway after delay
+            setTimeout(() => {
+              this.startPolling();
+            }, 3000);
+          }
+        }, 15000); // Wait 15 seconds before restart
         return;
       }
 
@@ -154,8 +188,18 @@ class TelegramBotHandler {
     const telegramId = msg.from.id.toString();
     const username = msg.from.username || msg.from.first_name || 'Unknown';
 
-    // Parameter ni to'g'ri olish
-    const parameter = match && match[1] ? match[1].trim() : '';
+    // Parameter ni to'g'ri olish va URL decode qilish
+    let parameter = match && match[1] ? match[1].trim() : '';
+
+    // URL decode qilish (bo'shliqlar va boshqa maxsus belgilar uchun)
+    if (parameter) {
+      try {
+        parameter = decodeURIComponent(parameter);
+        console.log(`Decoded parameter: "${parameter}"`);
+      } catch (error) {
+        console.log(`Failed to decode parameter, using original: "${parameter}"`);
+      }
+    }
 
     try {
       console.log(`Start command from ${username} (${telegramId}), parameter: "${parameter}"`);
@@ -191,22 +235,42 @@ class TelegramBotHandler {
       }
 
       // Token orqali foydalanuvchini topish va bog'lash
+      // Pastgi chiziqlarni bo'sh joy bilan almashtirish
+      const originalToken = token;
+      const tokenWithSpaces = token.replace(/_/g, ' ');
+      
       // Token username yoki phone bo'lishi mumkin
       let searchQuery = {
         $or: [
-          { username: token },
-          { phone: token }
+          { username: originalToken },
+          { username: tokenWithSpaces },
+          { phone: originalToken },
+          { phone: tokenWithSpaces }
         ]
       };
 
       // Only add _id search if token looks like a valid ObjectId (24 hex characters)
-      if (/^[0-9a-fA-F]{24}$/.test(token)) {
-        searchQuery.$or.push({ _id: token });
+      if (/^[0-9a-fA-F]{24}$/.test(originalToken)) {
+        searchQuery.$or.push({ _id: originalToken });
       }
+
+      // Case-insensitive qidiruv ham qo'shish
+      searchQuery.$or.push(
+        { username: { $regex: new RegExp(`^${originalToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${tokenWithSpaces.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+      );
+
+      console.log(`Search query:`, JSON.stringify(searchQuery, null, 2));
 
       const user = await this.models.User.findOne(searchQuery);
 
       console.log(`User found:`, user ? `${user.username} (${user._id})` : 'Not found');
+
+      if (!user) {
+        // Qo'shimcha debug: barcha foydalanuvchilarni ko'rsatish
+        const allUsers = await this.models.User.find({}, 'username phone _id').limit(5);
+        console.log(`Available users (first 5):`, allUsers.map(u => ({ username: u.username, phone: u.phone, id: u._id })));
+      }
 
       if (!user) {
         await this.bot.sendMessage(chatId,
@@ -728,41 +792,41 @@ class TelegramBotHandler {
   async sendTomorrowDebtsToUser(telegramId, debts) {
     try {
       const chatId = telegramId;
-      
+
       // Xabar yaratish
       let message = `🔔 **Eslatma: Ertaga to'lov qilish kerak!**\n\n`;
       message += `📋 Ertaga muddati tugaydigan qarzlar: ${debts.length} ta\n\n`;
-      
+
       debts.forEach((debt, index) => {
         message += `${'─'.repeat(40)}\n`;
         message += `${index + 1}. 👤 ${debt.creditor}\n`;
         message += `💰 ${debt.amount.toLocaleString()} ${debt.currency}\n`;
-        
+
         // Telefon raqamni clickable qilish
         if (debt.phone && debt.phone !== 'Ko\'rsatilmagan') {
           // Telefon raqamni to'liq formatda ko'rsatish
           let fullPhone = debt.phone;
-          
+
           // Agar telefon raqami + bilan boshlanmasa, country code qo'shish
           if (!fullPhone.startsWith('+')) {
             const countryCode = debt.countryCode || '+998';
             fullPhone = countryCode + fullPhone;
           }
-          
+
           // Telefon raqamni tozalash - faqat raqamlar va + belgisi qoldirish, bo'shliqlarni olib tashlash
           const cleanPhone = fullPhone.replace(/[^\d+]/g, '');
           message += `📞 [${cleanPhone}](tel:${cleanPhone})\n`;
         } else {
           message += `📞 Ko'rsatilmagan\n`;
         }
-        
+
         message += `📅 Muddat: ${new Date(debt.debtDate).toLocaleDateString('uz-UZ')}\n`;
         if (debt.description) {
           message += `📄 Izoh: ${debt.description}\n`;
         }
         message += `${'─'.repeat(40)}\n\n`;
       });
-      
+
 
 
       // Xabarni yuborish
@@ -771,7 +835,7 @@ class TelegramBotHandler {
       });
 
       console.log(`✅ Tomorrow debts reminder sent to user ${telegramId}`);
-      
+
     } catch (error) {
       console.error(`❌ Error sending tomorrow debts to user ${telegramId}:`, error);
       throw error;
@@ -790,14 +854,22 @@ class TelegramBotHandler {
   }
 
   // Bot ni to'xtatish
-  stopBot() {
-    if (this.bot && this.isPolling) {
+  async stopBot() {
+    if (this.bot) {
       try {
-        this.bot.stopPolling();
+        console.log('🛑 Stopping Telegram bot...');
         this.isPolling = false;
-        console.log('🛑 Telegram bot stopped');
+
+        if (this.bot.isPolling()) {
+          await this.bot.stopPolling({ cancel: true });
+          console.log('🛑 Telegram bot polling stopped');
+        } else {
+          console.log('🛑 Bot was not polling');
+        }
       } catch (error) {
-        console.error('❌ Error stopping bot:', error);
+        console.error('❌ Error stopping bot:', error.message);
+        // Force set polling to false even if stop fails
+        this.isPolling = false;
       }
     }
   }
