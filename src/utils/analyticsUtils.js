@@ -55,7 +55,7 @@ export const calculateUserRating = (creditor, debts) => {
 };
 
 // Function to get analytics data
-export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) => {
+export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = [], userTier = 'free', debtLimit = 20) => {
   const now = new Date();
   const periodStart = new Date();
   
@@ -78,14 +78,27 @@ export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) =
     new Date(debt.createdAt) >= periodStart
   );
   
-  // Calculate statistics
+  // For free tier, only consider manageable debts for statistics
+  const manageableDebts = userTier === 'free' && debtLimit !== Infinity 
+    ? periodDebts.slice(0, debtLimit) 
+    : periodDebts;
+  
+  // Calculate statistics - show all debts but note manageable ones
   const totalAmount = periodDebts.reduce((sum, debt) => sum + debt.amount, 0);
+  const manageableTotalAmount = manageableDebts.reduce((sum, debt) => sum + debt.amount, 0);
+  
   const pendingAmount = periodDebts
+    .filter(debt => debt.status === 'pending')
+    .reduce((sum, debt) => sum + debt.amount, 0);
+  const manageablePendingAmount = manageableDebts
     .filter(debt => debt.status === 'pending')
     .reduce((sum, debt) => sum + debt.amount, 0);
   
   // Calculate paid amount including debt adjustments
   const directlyPaidAmount = periodDebts
+    .filter(debt => debt.status === 'paid')
+    .reduce((sum, debt) => sum + debt.amount, 0);
+  const manageableDirectlyPaidAmount = manageableDebts
     .filter(debt => debt.status === 'paid')
     .reduce((sum, debt) => sum + debt.amount, 0);
   
@@ -94,10 +107,11 @@ export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) =
     .reduce((sum, adjustment) => sum + adjustment.adjustmentAmount, 0);
   
   const paidAmount = directlyPaidAmount + adjustmentAmount;
+  const manageablePaidAmount = manageableDirectlyPaidAmount + adjustmentAmount;
   
-  // Top creditors
+  // Top creditors - use manageable debts for statistics
   const creditorStats = {};
-  periodDebts.forEach(debt => {
+  manageableDebts.forEach(debt => {
     if (!creditorStats[debt.creditor]) {
       creditorStats[debt.creditor] = { total: 0, pending: 0, paid: 0, count: 0 };
     }
@@ -125,9 +139,9 @@ export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) =
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
   
-  // Monthly trends
+  // Monthly trends - use manageable debts for statistics
   const monthlyData = {};
-  periodDebts.forEach(debt => {
+  manageableDebts.forEach(debt => {
     const month = new Date(debt.createdAt).toISOString().slice(0, 7);
     if (!monthlyData[month]) {
       monthlyData[month] = { pending: 0, paid: 0, count: 0 };
@@ -155,8 +169,8 @@ export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) =
     .map(([month, data]) => ({ month, ...data }))
     .sort((a, b) => a.month.localeCompare(b.month));
   
-  // Payment speed analysis
-  const paidDebts = periodDebts.filter(debt => debt.status === 'paid' && debt.paidAt);
+  // Payment speed analysis - use manageable debts for statistics
+  const paidDebts = manageableDebts.filter(debt => debt.status === 'paid' && debt.paidAt);
   const paymentSpeeds = paidDebts.map(debt => {
     const created = new Date(debt.createdAt);
     const paid = new Date(debt.paidAt);
@@ -168,16 +182,31 @@ export const getAnalyticsData = (debts, analyticsPeriod, debtAdjustments = []) =
     : 0;
   
   return {
+    // All debts data (for display)
     totalAmount,
     pendingAmount,
     paidAmount,
     totalDebts: periodDebts.length,
     pendingDebts: periodDebts.filter(d => d.status === 'pending').length,
     paidDebts: periodDebts.filter(d => d.status === 'paid').length,
+    
+    // Manageable debts data (for statistics)
+    manageableTotalAmount,
+    manageablePendingAmount,
+    manageablePaidAmount,
+    manageableTotalDebts: manageableDebts.length,
+    manageablePendingDebts: manageableDebts.filter(d => d.status === 'pending').length,
+    manageablePaidDebts: manageableDebts.filter(d => d.status === 'paid').length,
+    
     topCreditors,
     monthlyTrends,
     avgPaymentDays,
     paymentSpeeds,
-    adjustmentAmount // Include adjustment amount in the returned data
+    adjustmentAmount, // Include adjustment amount in the returned data
+    
+    // Tier information
+    userTier,
+    debtLimit,
+    isLimited: userTier === 'free' && debtLimit !== Infinity
   };
 };

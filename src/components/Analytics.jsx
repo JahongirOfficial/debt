@@ -11,7 +11,7 @@ export function QarzdaftarAnalytics() {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
   const [currency] = useStoredState('qarzdaftar_currency', 'UZS');
   const t = useTranslation(language);
-  const { debts, loading } = useDebts();
+  const { debts, loading, userTier, debtLimit } = useDebts();
   const [debtAdjustments, setDebtAdjustments] = useState([]);
   const [adjustmentsLoading, setAdjustmentsLoading] = useState(true);
 
@@ -88,6 +88,8 @@ export function QarzdaftarAnalytics() {
 
   const generatePNGReport = () => {
     const reportData = getReportData();
+    // Limit PNG report to only 15 people
+    const limitedReportData = reportData.slice(0, 15);
     const reportTitle = getReportTitle();
 
     // Create high-resolution landscape canvas for PNG
@@ -161,7 +163,7 @@ export function QarzdaftarAnalytics() {
     ctx.font = '14px Arial';
     ctx.textAlign = 'center';
 
-    reportData.forEach((debt, rowIndex) => {
+    limitedReportData.forEach((debt, rowIndex) => {
       const rowY = tableY + rowHeight + (rowIndex * rowHeight);
 
       // Alternate row colors
@@ -539,7 +541,7 @@ export function QarzdaftarAnalytics() {
   };
 
   // Calculate analytics data based on MongoDB data
-  const analyticsData = getAnalyticsData(debts, analyticsPeriod, debtAdjustments);
+  const analyticsData = getAnalyticsData(debts, analyticsPeriod, debtAdjustments, userTier, debtLimit);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">

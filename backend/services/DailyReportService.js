@@ -1,4 +1,5 @@
 import XLSX from 'xlsx';
+import XLSXStyle from 'xlsx-style';
 import fs from 'fs-extra';
 import path from 'path';
 import cron from 'node-cron';
@@ -44,8 +45,17 @@ class DailyReportService {
       timezone: "Asia/Tashkent"
     });
 
+    // Har kuni soat 23:59 da har bir foydalanuvchiga barcha qarzlar jadvalini yuborish
+    cron.schedule('59 23 * * *', async () => {
+      console.log('🕘 Starting daily all debts report at 23:59');
+      await this.sendDailyAllDebtsReport();
+    }, {
+      timezone: "Asia/Tashkent"
+    });
+
     console.log('⏰ Daily reports scheduled for 09:00 (Tashkent time)');
     console.log('⏰ Tomorrow debt reminders scheduled for 08:30 (Tashkent time)');
+    console.log('⏰ Daily all debts report scheduled for 23:59 (Tashkent time)');
   }
 
   async generateAndSendDailyReports() {
@@ -140,7 +150,7 @@ class DailyReportService {
     // Workbook yaratish
     const workbook = XLSX.utils.book_new();
 
-    // Faqat jadval formatida ma'lumotlar - rasmdagidek
+    // Professional header va ma'lumotlar
     const tableData = [
       ['Kreditor', 'Summa', 'Telefon', 'Qarz sanasi', 'Yaratilgan sana', 'Holat']
     ];
@@ -173,21 +183,75 @@ class DailyReportService {
 
     const worksheet = XLSX.utils.aoa_to_sheet(tableData);
 
-    // Ustun kengliklarini sozlash
+    // Ustun kengliklarini sozlash - kengroq qilish
     worksheet['!cols'] = [
-      { width: 20 }, // Kreditor
-      { width: 15 }, // Summa
-      { width: 18 }, // Telefon
-      { width: 12 }, // Qarz sanasi
-      { width: 15 }, // Yaratilgan sana
-      { width: 12 }  // Holat
+      { width: 25 }, // Kreditor - kengroq
+      { width: 18 }, // Summa - kengroq
+      { width: 20 }, // Telefon - kengroq
+      { width: 15 }, // Qarz sanasi
+      { width: 18 }, // Yaratilgan sana - kengroq
+      { width: 15 }  // Holat
     ];
+
+    // Header styling - Orange background va bold text
+    const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1'];
+    headerCells.forEach(cell => {
+      if (!worksheet[cell]) worksheet[cell] = {};
+      worksheet[cell].s = {
+        fill: {
+          fgColor: { rgb: "FF8C00" } // Orange color
+        },
+        font: {
+          bold: true,
+          color: { rgb: "FFFFFF" }, // White text
+          sz: 12 // Font size
+        },
+        alignment: {
+          horizontal: "center",
+          vertical: "center"
+        },
+
+      };
+    });
+
+    // Data rows styling - alternating colors
+    if (debts.length > 0) {
+      for (let row = 2; row <= debts.length + 1; row++) {
+        const isEvenRow = (row - 2) % 2 === 0;
+        const rowCells = [`A${row}`, `B${row}`, `C${row}`, `D${row}`, `E${row}`, `F${row}`];
+        
+        rowCells.forEach(cell => {
+          if (!worksheet[cell]) worksheet[cell] = {};
+          worksheet[cell].s = {
+            fill: {
+              fgColor: { rgb: isEvenRow ? "F8F9FA" : "FFFFFF" } // Alternating light gray and white
+            },
+            font: {
+              sz: 11
+            },
+            alignment: {
+              horizontal: "left",
+              vertical: "center"
+            },
+            border: {
+              top: { style: "thin", color: { rgb: "E0E0E0" } },
+              bottom: { style: "thin", color: { rgb: "E0E0E0" } },
+              left: { style: "thin", color: { rgb: "E0E0E0" } },
+              right: { style: "thin", color: { rgb: "E0E0E0" } }
+            }
+          };
+        });
+      }
+    }
+
+    // Freeze header row
+    worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Qarzlar');
 
-    // Faylni saqlash
-    XLSX.writeFile(workbook, filePath);
-    console.log('📊 Excel report generated:', fileName);
+    // Faylni saqlash - styled version
+    XLSXStyle.writeFile(workbook, filePath);
+    console.log('📊 Professional Excel report generated:', fileName);
 
     return filePath;
   }
@@ -287,6 +351,50 @@ class DailyReportService {
 
     } catch (error) {
       console.error('❌ Error in sendTomorrowDebtReminders:', error);
+    }
+  }
+
+  async sendDailyAllDebtsReport() {
+    try {
+      console.log('📊 Sending daily all debts report to all users...');
+
+      // Telegram ID si bor barcha foydalanuvchilarni topish
+      const users = await this.models.User.find({
+        telegramId: { $exists: true, $ne: null }
+      });
+
+      if (users.length === 0) {
+        console.log('⚠️ No users with Telegram found for daily all debts report');
+        return;
+      }
+
+      let totalReports = 0;
+
+      // Har bir foydalanuvchi uchun
+      for (const user of users) {
+        try {
+          // Foydalanuvchining barcha qarzlarini topish
+          const allDebts = await this.models.Debt.find({
+            userId: user._id
+          }).sort({ createdAt: -1 });
+
+          if (allDebts.length > 0) {
+            // Telegram bot orqali barcha qarzlar jadvalini yuborish
+            await this.telegramBot.sendAllDebtsToUser(user.telegramId, allDebts);
+            totalReports++;
+            console.log(`✅ Daily all debts report sent to user: ${user.username} (${allDebts.length} debts)`);
+          } else {
+            console.log(`⚠️ User ${user.username} has no debts, skipping report`);
+          }
+        } catch (error) {
+          console.error(`❌ Error sending daily report to user ${user.username}:`, error);
+        }
+      }
+
+      console.log(`✅ Daily all debts reports completed. Sent to ${totalReports} users`);
+
+    } catch (error) {
+      console.error('❌ Error in sendDailyAllDebtsReport:', error);
     }
   }
 

@@ -12,6 +12,8 @@ export const DebtProvider = ({ children }) => {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userTier, setUserTier] = useState('free');
+  const [debtLimit, setDebtLimit] = useState(20);
 
   // Fetch debts from backend
   const fetchDebts = async () => {
@@ -31,6 +33,8 @@ export const DebtProvider = ({ children }) => {
       
       if (data.success) {
         setDebts(data.debts);
+        setUserTier(data.userTier || 'free');
+        setDebtLimit(data.debtLimit || 20);
       } else {
         setError(data.message || 'Failed to fetch debts');
       }
@@ -318,6 +322,8 @@ export const DebtProvider = ({ children }) => {
     ratings,
     loading,
     error,
+    userTier,
+    debtLimit,
     fetchDebts,
     fetchRatings,
     calculateRatings,

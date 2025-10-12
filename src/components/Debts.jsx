@@ -13,7 +13,7 @@ export function QarzdaftarDebts() {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
   const [currency] = useStoredState('qarzdaftar_currency', 'UZS');
   const t = useTranslation(language);
-  const { debts, loading, error, createDebt, updateDebt, deleteDebt, markDebtAsPaid, fetchDebtHistory } = useDebts();
+  const { debts, loading, error, userTier, debtLimit, createDebt, updateDebt, deleteDebt, markDebtAsPaid, fetchDebtHistory } = useDebts();
   const { user } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(null);
@@ -32,25 +32,8 @@ export function QarzdaftarDebts() {
     currency: currency || 'UZS' // Add currency field with default from settings
   });
 
-  // Check user's subscription tier and get debt limit
-  const getUserDebtLimit = () => {
-    if (user && user.subscriptionTier) {
-      const tier = user.subscriptionTier.toLowerCase();
-      switch (tier) {
-        case 'pro':
-          return Infinity; // Unlimited for Pro tier
-        case 'standard':
-          return 150;
-        case 'free':
-        default:
-          return 20;
-      }
-    }
-    return 20; // Default to free tier limit
-  };
-
-  const userDebtLimit = getUserDebtLimit();
-  const userTier = user && user.subscriptionTier ? user.subscriptionTier.toLowerCase() : 'free';
+  // Use debt limit from context
+  const userDebtLimit = debtLimit;
 
   // Country codes with flags
   const countryCodes = [
@@ -137,11 +120,8 @@ export function QarzdaftarDebts() {
   const addDebt = async () => {
     if (!newDebt.creditor || !newDebt.amount) return;
 
-    // Check if user has reached the debt limit (skip for Pro tier with unlimited)
-    if (userDebtLimit !== Infinity && debts.length >= userDebtLimit) {
-      // Instead of showing an alert, we'll let the user see the upgrade message
-      return;
-    }
+    // No limit check here - allow adding debts even if limit is reached
+    // Backend will handle the logic for manageable vs non-manageable debts
 
     const debtData = {
       ...newDebt,
@@ -339,6 +319,33 @@ export function QarzdaftarDebts() {
   };
 
   const filteredDebts = getFilteredDebts();
+
+  // For free tier users, sort pending debts by creation date (oldest first) and limit management to first 20
+  const getManageableDebts = () => {
+    if (userTier === 'free' && userDebtLimit !== Infinity) {
+      const pendingDebts = filteredDebts.filter(debt => debt.status === 'pending');
+      const paidDebts = filteredDebts.filter(debt => debt.status === 'paid');
+
+      // Sort pending debts by creation date (oldest first)
+      const sortedPendingDebts = pendingDebts.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      // Mark which debts are manageable (first 20 pending debts)
+      const debtsWithManageability = sortedPendingDebts.map((debt, index) => ({
+        ...debt,
+        isManageable: index < userDebtLimit
+      }));
+
+      // Combine with paid debts (all paid debts are always manageable)
+      const allPaidDebts = paidDebts.map(debt => ({ ...debt, isManageable: true }));
+
+      return [...debtsWithManageability, ...allPaidDebts];
+    }
+
+    // For premium users, all debts are manageable
+    return filteredDebts.map(debt => ({ ...debt, isManageable: true }));
+  };
+
+  const manageableDebts = getManageableDebts();
 
   // Function to show debt details
   const showDebtDetails = (debt) => {
@@ -604,15 +611,9 @@ export function QarzdaftarDebts() {
               {t('debts.subtitle', 'Qarzlaringizni boshqaring va kuzatib boring')}
             </p>
           </div>
+
           <button
-            onClick={() => {
-              // Check if user has reached the debt limit (skip for Pro tier with unlimited)
-              if (userDebtLimit !== Infinity && debts.length >= userDebtLimit) {
-                // Instead of showing an alert, we'll let the user see the upgrade message
-                return;
-              }
-              setShowAddForm(true);
-            }}
+            onClick={() => setShowAddForm(true)}
             className="group relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white p-4 rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
@@ -622,27 +623,31 @@ export function QarzdaftarDebts() {
           </button>
         </div>
 
-        {/* Show upgrade message when user has reached the debt limit */}
-        {userDebtLimit !== Infinity && debts.length >= userDebtLimit && (
-          <div className="mb-6 p-6 bg-yellow-50/80 dark:bg-yellow-900/30 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-2xl shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        {/* Limit warning for free tier users */}
+        {userTier === 'free' && userDebtLimit !== Infinity && debts.filter(debt => debt.status === 'pending').length >= userDebtLimit && (
+          <div className="mb-6 p-6 bg-amber-50/80 dark:bg-amber-900/30 backdrop-blur-sm border border-amber-200/50 dark:border-amber-700/50 rounded-xl shadow-lg">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 bg-amber-100 dark:bg-amber-800/50 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-                  {t('debts.tierLimitTitle', 'Qarzlar cheklangan')}
-                </h4>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300 leading-relaxed">
-                  {t('debts.tierLimitReached', `Siz ${userTier.charAt(0).toUpperCase() + userTier.slice(1)} tarifidasiz va ${userDebtLimit === Infinity ? 'cheksiz' : userDebtLimit} ta qarz qo'shdingiz. Ko'proq qarz qo'shish uchun tarifni yangilang.`, { tier: userTier.charAt(0).toUpperCase() + userTier.slice(1), limit: userDebtLimit === Infinity ? 'cheksiz' : userDebtLimit })}{' '}
+                <p className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
+                  Free tarif limiti to'lgan!
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                  Siz {userDebtLimit} ta kutilayotgan qarz limitiga yetdingiz. Faqat eng eski {userDebtLimit} ta kutilayotgan qarzni boshqarishingiz mumkin (tahrirlash, to'lash, o'chirish). Qolgan qarzlar xiralashgan ko'rinishda va ular ustida amallar bajarib bo'lmaydi.
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed mt-2">
+                  Ko'proq qarzlarni boshqarish uchun{' '}
                   <button
-                    className="inline-flex items-center text-orange-600 font-medium hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 transition-colors duration-200 underline decoration-2 underline-offset-2"
+                    className="inline text-orange-600 font-semibold hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline decoration-2 underline-offset-2"
                     onClick={() => navigate('/pricing')}
                   >
-                    {t('debts.upgradeNow', 'Hoziroq yangilang')}
+                    tarifni yangilang
                   </button>
+                  .
                 </p>
               </div>
             </div>
@@ -880,7 +885,7 @@ export function QarzdaftarDebts() {
         </div>
 
         {/* Modern Excel-style Table Layout */}
-        {filteredDebts.length === 0 ? (
+        {manageableDebts.length === 0 ? (
           <div className="text-center py-12">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2z" />
@@ -916,110 +921,129 @@ export function QarzdaftarDebts() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredDebts.map((debt, index) => (
-                  <tr
-                    key={debt._id}
-                    className={`${index % 2 === 0
-                      ? 'bg-white dark:bg-gray-800'
-                      : 'bg-gray-50 dark:bg-gray-700'
-                      } hover:bg-orange-50 dark:hover:bg-gray-600 transition-colors`}
-                  >
-                    <td className="py-2 px-2 text-gray-600 dark:text-gray-300 font-mono text-sm">
-                      {index + 1}
-                    </td>
-                    <td className="py-2 px-3 font-medium text-gray-800 dark:text-white">
-                      <div className="flex items-center gap-2">
-                        <div className="bg-gradient-to-br from-blue-500 to-indigo-500 w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                          {debt.creditor.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium text-sm truncate">{debt.creditor}</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 md:hidden truncate">
-                            {formatCurrency(debt.amount, debt.currency || currency || 'UZS', language)}
-                            {debt.phone && (
-                              <span className="ml-2">• {formatPhoneNumber(debt.phone, debt.countryCode)}</span>
-                            )}
+                {manageableDebts.map((debt, index) => {
+                  // Check if this debt is manageable
+                  const isOverLimit = !debt.isManageable;
+
+                  return (
+                    <tr
+                      key={debt._id}
+                      className={`${index % 2 === 0
+                        ? 'bg-white dark:bg-gray-800'
+                        : 'bg-gray-50 dark:bg-gray-700'
+                        } ${isOverLimit
+                          ? 'opacity-40 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed'
+                          : 'hover:bg-orange-50 dark:hover:bg-gray-600'
+                        } transition-all duration-200`}
+                    >
+                      <td className="py-2 px-2 text-gray-600 dark:text-gray-300 font-mono text-sm">
+                        {index + 1}
+                      </td>
+                      <td className="py-2 px-3 font-medium text-gray-800 dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-gradient-to-br from-blue-500 to-indigo-500 w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                            {debt.creditor.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm truncate">{debt.creditor}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 md:hidden truncate">
+                              {formatCurrency(debt.amount, debt.currency || currency || 'UZS', language)}
+                              {debt.phone && (
+                                <span className="ml-2">• {formatPhoneNumber(debt.phone, debt.countryCode)}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-2 px-3 font-bold text-gray-800 dark:text-white text-sm">
-                      {formatCurrency(debt.amount, debt.currency || currency || 'UZS', language)}
-                    </td>
-                    <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden md:table-cell text-sm">
-                      {debt.phone ? formatPhoneNumber(debt.phone, debt.countryCode) : <span className="text-gray-400 italic">-</span>}
-                    </td>
-                    <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell text-sm">
-                      {new Date(debt.debtDate).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell text-sm">
-                      {new Date(debt.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 px-2 hidden md:table-cell">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${debt.status === 'paid'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                        }`}>
-                        {debt.status === 'paid'
-                          ? t('common.paid', 'To\'langan')
-                          : t('common.pending', 'Kutilmoqda')}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2">
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => showDebtDetails(debt)}
-                          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
-                          title={t('common.details', 'Batafsil')}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </button>
-                        {debt.status === 'pending' && (
-                          <>
-                            <button
-                              onClick={() => startEditing(debt)}
-                              className="group relative p-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-indigo-500/20 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:scale-110 hover:shadow-lg"
-                              title={t('common.edit', 'Tahrirlash')}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="relative h-4 w-4 transform group-hover:rotate-12 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const result = await markAsPaidHandler(debt._id, '');
-                                // Optionally, you could show a notification or update the UI here
-                              }}
-                              className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-500 hover:text-green-700 dark:bg-green-900 dark:hover:bg-green-800 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                              title={t('debts.form.markAsPaid', 'To\'langan deb belgilash')}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={async () => {
-                                const result = await deleteDebtHandler(debt._id, '');
-                                // Optionally, you could show a notification or update the UI here
-                              }}
-                              className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                              title={t('common.delete', 'O\'chirish')}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </>
-                        )}
+                      </td>
+                      <td className="py-2 px-3 font-bold text-gray-800 dark:text-white text-sm">
+                        {formatCurrency(debt.amount, debt.currency || currency || 'UZS', language)}
+                      </td>
+                      <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden md:table-cell text-sm">
+                        {debt.phone ? formatPhoneNumber(debt.phone, debt.countryCode) : <span className="text-gray-400 italic">-</span>}
+                      </td>
+                      <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell text-sm">
+                        {new Date(debt.debtDate).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 px-2 text-gray-600 dark:text-gray-300 hidden lg:table-cell text-sm">
+                        {new Date(debt.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-2 px-2 hidden md:table-cell">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${debt.status === 'paid'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                          }`}>
+                          {debt.status === 'paid'
+                            ? t('common.paid', 'To\'langan')
+                            : t('common.pending', 'Kutilmoqda')}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2">
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => showDebtDetails(debt)}
+                            className={`p-2 rounded-full transition-colors ${isOverLimit
+                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300'
+                              }`}
+                            title={isOverLimit ? 'Limitdan tashqari qarz' : t('common.details', 'Batafsil')}
+                            disabled={isOverLimit}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          {debt.status === 'pending' && !isOverLimit && (
+                            <>
+                              <button
+                                onClick={() => startEditing(debt)}
+                                className="group relative p-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-indigo-500/20 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:scale-110 hover:shadow-lg"
+                                title={t('common.edit', 'Tahrirlash')}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-4 w-4 transform group-hover:rotate-12 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  const result = await markAsPaidHandler(debt._id, '');
+                                  // Optionally, you could show a notification or update the UI here
+                                }}
+                                className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-500 hover:text-green-700 dark:bg-green-900 dark:hover:bg-green-800 dark:text-green-400 dark:hover:text-green-300 transition-colors"
+                                title={t('debts.form.markAsPaid', 'To\'langan deb belgilash')}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  const result = await deleteDebtHandler(debt._id, '');
+                                  // Optionally, you could show a notification or update the UI here
+                                }}
+                                className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                title={t('common.delete', 'O\'chirish')}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                          {debt.status === 'pending' && isOverLimit && (
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs text-gray-400 dark:text-gray-500 italic px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-full">
+                                Limitdan tashqari
+                              </span>
+                            </div>
+                          )}
 
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

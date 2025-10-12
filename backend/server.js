@@ -1282,12 +1282,38 @@ app.get('/api/debts', authenticateToken, async (req, res) => {
           createdAt: new Date(),
           updatedAt: new Date()
         }
-      ]
+      ],
+      userTier: 'free',
+      debtLimit: 20
     });
   }
 
   try {
     const { status, startDate, endDate, search } = req.query;
+
+    // Get user's subscription tier and debt limit
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const getUserDebtLimit = (tier) => {
+      switch (tier?.toLowerCase()) {
+        case 'pro':
+          return Infinity; // Unlimited for Pro tier
+        case 'standard':
+          return 150;
+        case 'free':
+        default:
+          return 20;
+      }
+    };
+
+    const userDebtLimit = getUserDebtLimit(user.subscriptionTier);
+    const userTier = user.subscriptionTier || 'free';
 
     // So'rov yaratish
     const query = { userId: req.user.userId };
@@ -1321,7 +1347,9 @@ app.get('/api/debts', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      debts
+      debts,
+      userTier,
+      debtLimit: userDebtLimit
     });
   } catch (error) {
     console.error('Get debts error:', error);
@@ -1360,6 +1388,30 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
         message: 'Creditor, amount, and debtDate are required'
       });
     }
+
+    // Get user's subscription tier and debt limit
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const getUserDebtLimit = (tier) => {
+      switch (tier?.toLowerCase()) {
+        case 'pro':
+          return Infinity; // Unlimited for Pro tier
+        case 'standard':
+          return 150;
+        case 'free':
+        default:
+          return 20;
+      }
+    };
+
+    // No debt creation limit - users can create unlimited debts
+    // Limitation is only on management (editing/deleting) of pending debts
 
     // Yangi qarz yaratish
     const debt = new Debt({

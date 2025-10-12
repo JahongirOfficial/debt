@@ -2,12 +2,20 @@ import React, { useState } from 'react';
 import { useTranslation } from '../utils/translationUtils';
 import { useLanguage } from '../utils/LanguageContext.jsx';
 import { useAuth } from '../utils/AuthContext.jsx';
+import { useDebts } from '../utils/DebtContext.jsx';
+import { useNavigate } from 'react-router-dom';
 
 export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, onCollapseChange }) {
     const { language } = useLanguage();
     const { user, settings, logout } = useAuth();
+    const { debts, userTier, debtLimit } = useDebts();
+    const navigate = useNavigate();
     const t = useTranslation(language);
     const [isCollapsed, setIsCollapsed] = useState(false);
+
+    // Check if user has reached the pending debt limit
+    const pendingDebtsCount = debts ? debts.filter(debt => debt.status === 'pending').length : 0;
+    const hasReachedLimit = userTier === 'free' && debtLimit !== Infinity && pendingDebtsCount >= debtLimit;
 
     const handleCollapseToggle = () => {
         const newCollapsedState = !isCollapsed;
