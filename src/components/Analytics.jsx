@@ -561,60 +561,60 @@ export function QarzdaftarAnalytics() {
         <>
           {/* Modern Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-start justify-between gap-3">
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02] md:hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">{t('analytics.totalAmount', 'Jami summa')}</p>
-                  <p className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400 break-words leading-tight">{formatCurrency(analyticsData.totalAmount)}</p>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-blue-600 dark:text-blue-400 break-words leading-tight">{formatCurrency(analyticsData.totalAmount)}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg md:rounded-xl flex items-center justify-center shadow-md md:shadow-lg flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-start justify-between gap-3">
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02] md:hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">{t('analytics.pendingAmount', 'Kutilayotgan')}</p>
-                  <p className="text-lg sm:text-xl font-bold text-orange-600 dark:text-orange-400 break-words leading-tight">{formatCurrency(analyticsData.pendingAmount)}</p>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-orange-600 dark:text-orange-400 break-words leading-tight">{formatCurrency(analyticsData.pendingAmount)}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg md:rounded-xl flex items-center justify-center shadow-md md:shadow-lg flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-start justify-between gap-3">
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02] md:hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">{t('analytics.paidAmount', 'To\'langan')}</p>
-                  <p className="text-lg sm:text-xl font-bold text-green-600 dark:text-green-400 break-words leading-tight">{formatCurrency(analyticsData.paidAmount)}</p>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-green-600 dark:text-green-400 break-words leading-tight">{formatCurrency(analyticsData.paidAmount)}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg md:rounded-xl flex items-center justify-center shadow-md md:shadow-lg flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-start justify-between gap-3">
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-white/30 dark:border-gray-700/30 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] md:hover:scale-[1.02] md:hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-purple-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-start justify-between gap-2 md:gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">{t('analytics.avgPaymentDays', 'O\'rtacha to\'lov')}</p>
-                  <p className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400 break-words leading-tight">{analyticsData.avgPaymentDays} {t('analytics.days', 'kun')}</p>
+                  <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-purple-600 dark:text-purple-400 break-words leading-tight">{analyticsData.avgPaymentDays} {t('analytics.days', 'kun')}</p>
                 </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg md:rounded-xl flex items-center justify-center shadow-md md:shadow-lg flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>

@@ -15,7 +15,7 @@ export const DebtProvider = ({ children }) => {
   const [userTier, setUserTier] = useState('free');
   const [debtLimit, setDebtLimit] = useState(20);
 
-  // Fetch debts from backend
+  // Fetch debts from backend (with loading state for initial load)
   const fetchDebts = async () => {
     if (!user) return;
     
@@ -43,6 +43,33 @@ export const DebtProvider = ({ children }) => {
       console.error('Fetch debts error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Refresh debts without loading state (for updates after CRUD operations)
+  const refreshDebts = async () => {
+    if (!user) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch('/debts', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setDebts(data.debts);
+        setUserTier(data.userTier || 'free');
+        setDebtLimit(data.debtLimit || 20);
+      } else {
+        console.error('Failed to refresh debts:', data.message);
+      }
+    } catch (err) {
+      console.error('Refresh debts error:', err);
     }
   };
 
@@ -123,18 +150,19 @@ export const DebtProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        // Optimistically update the local state immediately
+        setDebts(prevDebts => [...prevDebts, data.debt]);
+        
         // Return immediately after successful creation
         const result = { success: true, debt: data.debt };
         
-        // Update debts list and ratings in the background without blocking
+        // Update ratings in the background without blocking
         setTimeout(async () => {
           try {
-            // Refresh debts list
-            await fetchDebts();
             // Recalculate ratings
             await calculateRatings();
           } catch (error) {
-            console.error('Error updating debts list and ratings:', error);
+            console.error('Error updating ratings:', error);
           }
         }, 0);
         
@@ -166,18 +194,23 @@ export const DebtProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        // Optimistically update the local state immediately
+        setDebts(prevDebts => 
+          prevDebts.map(debt => 
+            debt._id === id ? { ...debt, ...data.debt } : debt
+          )
+        );
+        
         // Return immediately after successful update
         const result = { success: true, debt: data.debt };
         
-        // Update debts list and ratings in the background without blocking
+        // Update ratings in the background without blocking
         setTimeout(async () => {
           try {
-            // Refresh debts list
-            await fetchDebts();
             // Recalculate ratings
             await calculateRatings();
           } catch (error) {
-            console.error('Error updating debts list and ratings:', error);
+            console.error('Error updating ratings:', error);
           }
         }, 0);
         
@@ -209,18 +242,19 @@ export const DebtProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        // Optimistically remove the debt from local state immediately
+        setDebts(prevDebts => prevDebts.filter(debt => debt._id !== id));
+        
         // Return immediately after successful deletion
         const result = { success: true };
         
-        // Update debts list and ratings in the background without blocking
+        // Update ratings in the background without blocking
         setTimeout(async () => {
           try {
-            // Refresh debts list
-            await fetchDebts();
             // Recalculate ratings
             await calculateRatings();
           } catch (error) {
-            console.error('Error updating debts list and ratings:', error);
+            console.error('Error updating ratings:', error);
           }
         }, 0);
         
@@ -278,18 +312,23 @@ export const DebtProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        // Optimistically update the local state immediately
+        setDebts(prevDebts => 
+          prevDebts.map(debt => 
+            debt._id === id ? { ...debt, ...data.debt } : debt
+          )
+        );
+        
         // Return immediately after successful operation
         const result = { success: true, debt: data.debt };
         
-        // Update debts list and ratings in the background without blocking
+        // Update ratings in the background without blocking
         setTimeout(async () => {
           try {
-            // Refresh debts list
-            await fetchDebts();
             // Recalculate ratings
             await calculateRatings();
           } catch (error) {
-            console.error('Error updating debts list and ratings:', error);
+            console.error('Error updating ratings:', error);
           }
         }, 0);
         

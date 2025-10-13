@@ -32,6 +32,8 @@ mongoose.connect(MONGODB_URI, {
     setupDatabaseIndexes();
     // Initialize Telegram bot
     await initializeTelegramBot();
+    // Start subscription expiration check
+    startSubscriptionExpirationCheck();
     // Serverni ishga tushirish
     startServer();
   })
@@ -41,6 +43,45 @@ mongoose.connect(MONGODB_URI, {
     // MongoDB bo'lmasa ham serverni ishga tushirish
     startServer();
   });
+
+// Function to check and downgrade expired subscriptions
+const checkExpiredSubscriptions = async () => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return; // Skip if database is not connected
+    }
+
+    const now = new Date();
+    const expiredUsers = await User.find({
+      subscriptionTier: { $in: ['standard', 'pro'] },
+      subscriptionExpiresAt: { $lte: now }
+    });
+
+    if (expiredUsers.length > 0) {
+      console.log(`Found ${expiredUsers.length} expired subscriptions, downgrading to free...`);
+      
+      for (const user of expiredUsers) {
+        await User.findByIdAndUpdate(user._id, {
+          subscriptionTier: 'free',
+          subscriptionExpiresAt: null,
+          subscriptionStartedAt: null
+        });
+        
+        console.log(`Downgraded user ${user.username} (${user._id}) from ${user.subscriptionTier} to free`);
+      }
+    }
+  } catch (error) {
+    console.error('Error checking expired subscriptions:', error);
+  }
+};
+
+// Start subscription expiration check
+const startSubscriptionExpirationCheck = () => {
+  // Check every hour
+  setInterval(checkExpiredSubscriptions, 60 * 60 * 1000);
+  // Also check immediately on startup
+  setTimeout(checkExpiredSubscriptions, 5000);
+};
 
 // Scheduled task to clean up old debt history records (older than 1 month)
 setInterval(async () => {
@@ -168,6 +209,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['free', 'standard', 'pro'],
     default: 'free'
+  },
+  subscriptionExpiresAt: {
+    type: Date,
+    default: null // null means no expiration (for free tier)
+  },
+  subscriptionStartedAt: {
+    type: Date,
+    default: null // when the current subscription started
   },
   role: {
     type: String,
@@ -2168,6 +2217,8 @@ app.get('/api/admin/users', authenticateAdmin, async (req, res) => {
       username: user.username,
       phone: user.phone,
       subscriptionTier: user.subscriptionTier,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      subscriptionStartedAt: user.subscriptionStartedAt,
       status: user.status,
       role: user.role,
       avatarColor: user.avatarColor,
@@ -2294,7 +2345,7 @@ app.put('/api/admin/users/:id/status', authenticateAdmin, async (req, res) => {
 // Update User Subscription
 app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res) => {
   try {
-    const { subscription } = req.body;
+    const { subscription, expirationDays } = req.body;
     const userId = req.params.id;
 
     console.log(`Admin ${req.user.userId} updating user ${userId} subscription to ${subscription}`);
@@ -2322,6 +2373,17 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
       });
     }
 
+    // Calculate expiration date
+    let subscriptionExpiresAt = null;
+    let subscriptionStartedAt = null;
+    
+    if (subscription !== 'free') {
+      const days = expirationDays || 30; // Default to 30 days
+      subscriptionStartedAt = new Date();
+      subscriptionExpiresAt = new Date();
+      subscriptionExpiresAt.setDate(subscriptionExpiresAt.getDate() + days);
+    }
+
     // MongoDB ulanmagan bo'lsa test javob qaytarish
     if (!mongoose.connection.readyState) {
       console.log('MongoDB not connected, returning test response');
@@ -2330,15 +2392,23 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
         message: 'User subscription updated successfully (test mode)',
         user: {
           id: userId,
-          subscriptionTier: subscription
+          subscriptionTier: subscription,
+          subscriptionExpiresAt,
+          subscriptionStartedAt
         }
       });
     }
 
     // User'ni topish va yangilash
+    const updateData = {
+      subscriptionTier: subscription,
+      subscriptionExpiresAt,
+      subscriptionStartedAt
+    };
+
     const user = await User.findByIdAndUpdate(
       userId,
-      { subscriptionTier: subscription },
+      updateData,
       { new: true, runValidators: true }
     ).select('-password');
 
@@ -2361,6 +2431,8 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
         phone: user.phone,
         status: user.status,
         subscriptionTier: user.subscriptionTier,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+        subscriptionStartedAt: user.subscriptionStartedAt,
         role: user.role,
         avatarColor: user.avatarColor,
         createdAt: user.createdAt,

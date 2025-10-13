@@ -16,6 +16,7 @@ export function UserManagement() {
   });
   const [openDropdown, setOpenDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [subscriptionModal, setSubscriptionModal] = useState(null); // { userId, username, currentTier }
 
   useEffect(() => {
     fetchUsers();
@@ -112,7 +113,7 @@ export function UserManagement() {
     }
   };
 
-  const updateUserSubscription = async (userId, newSubscription) => {
+  const updateUserSubscription = async (userId, newSubscription, expirationDays = 30) => {
     try {
       // Validate userId
       if (!userId || userId === 'undefined') {
@@ -120,10 +121,25 @@ export function UserManagement() {
         return;
       }
 
+      // Calculate expiration date for UI update
+      let subscriptionExpiresAt = null;
+      let subscriptionStartedAt = null;
+      
+      if (newSubscription !== 'free') {
+        subscriptionStartedAt = new Date();
+        subscriptionExpiresAt = new Date();
+        subscriptionExpiresAt.setDate(subscriptionExpiresAt.getDate() + expirationDays);
+      }
+
       // Optimistic update - darhol UI'ni yangilaymiz
       const originalUsers = [...users];
       setUsers(users.map(user =>
-        (user.id || user._id) === userId ? { ...user, subscriptionTier: newSubscription } : user
+        (user.id || user._id) === userId ? { 
+          ...user, 
+          subscriptionTier: newSubscription,
+          subscriptionExpiresAt,
+          subscriptionStartedAt
+        } : user
       ));
 
       const response = await apiFetch(`/admin/users/${userId}/subscription`, {
@@ -132,7 +148,10 @@ export function UserManagement() {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ subscription: newSubscription }),
+        body: JSON.stringify({ 
+          subscription: newSubscription,
+          expirationDays: expirationDays
+        }),
       });
 
       if (!response.ok) {
@@ -184,6 +203,24 @@ export function UserManagement() {
   const handleDeleteClick = (userId, username) => {
     setDeleteConfirm({ userId, username });
     setOpenDropdown(null);
+  };
+
+  const handleSubscriptionChange = (userId, username, currentTier, newTier) => {
+    if (newTier === 'free') {
+      // For free tier, no expiration needed
+      updateUserSubscription(userId, newTier);
+    } else {
+      // For paid tiers, show modal to select expiration
+      setSubscriptionModal({ userId, username, currentTier, newTier });
+    }
+    setOpenDropdown(null);
+  };
+
+  const confirmSubscriptionChange = (expirationDays) => {
+    if (subscriptionModal) {
+      updateUserSubscription(subscriptionModal.userId, subscriptionModal.newTier, expirationDays);
+      setSubscriptionModal(null);
+    }
   };
 
   const confirmDelete = () => {
@@ -446,6 +483,14 @@ export function UserManagement() {
                         </svg>
                         Ro'yxatdan o'tgan: {new Date(user.createdAt).toLocaleDateString('uz-UZ')}
                       </p>
+                      {user.subscriptionExpiresAt && user.subscriptionTier !== 'free' && (
+                        <p className="text-sm text-orange-600 dark:text-orange-400 flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Tugaydi: {new Date(user.subscriptionExpiresAt).toLocaleDateString('uz-UZ')}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -471,7 +516,7 @@ export function UserManagement() {
                     <div className="relative">
                       <select
                         value={user.subscriptionTier}
-                        onChange={(e) => updateUserSubscription(user.id || user._id, e.target.value)}
+                        onChange={(e) => handleSubscriptionChange(user.id || user._id, user.username, user.subscriptionTier, e.target.value)}
                         className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-all duration-200 hover:border-purple-400 appearance-none"
                         style={{ backgroundImage: 'none' }}
                       >
@@ -635,6 +680,130 @@ export function UserManagement() {
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
+                O'chirish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Expiration Modal */}
+      {subscriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Obuna Muddatini Belgilash
+              </h3>
+              <button
+                onClick={() => setSubscriptionModal(null)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                <span className="font-semibold">{subscriptionModal.username}</span> foydalanuvchisining obunasini{' '}
+                <span className="font-semibold text-purple-600 dark:text-purple-400">
+                  {subscriptionModal.newTier === 'standard' ? 'Standart' : 'Professional'}
+                </span>{' '}
+                rejimiga o'zgartirmoqdasiz.
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Obuna muddati tugagach, foydalanuvchi avtomatik ravishda bepul rejimga qaytadi.
+              </p>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Obuna muddati (kunlarda):
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => confirmSubscriptionChange(7)}
+                  className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
+                >
+                  <div className="font-semibold text-gray-900 dark:text-white">7 kun</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">Sinov</div>
+                </button>
+                <button
+                  onClick={() => confirmSubscriptionChange(30)}
+                  className="p-3 border-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors text-center"
+                >
+                  <div className="font-semibold text-purple-600 dark:text-purple-400">30 kun</div>
+                  <div className="text-xs text-purple-500 dark:text-purple-400">Standart</div>
+                </button>
+                <button
+                  onClick={() => confirmSubscriptionChange(90)}
+                  className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
+                >
+                  <div className="font-semibold text-gray-900 dark:text-white">90 kun</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">3 oy</div>
+                </button>
+                <button
+                  onClick={() => confirmSubscriptionChange(365)}
+                  className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
+                >
+                  <div className="font-semibold text-gray-900 dark:text-white">365 kun</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">1 yil</div>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setSubscriptionModal(null)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              >
+                Bekor qilish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-red-600 dark:text-red-400">
+                Foydalanuvchini O'chirish
+              </h3>
+              <button
+                onClick={cancelDelete}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-300">
+                <span className="font-semibold">{deleteConfirm.username}</span> foydalanuvchisini butunlay o'chirishni xohlaysizmi?
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+                Bu amal qaytarib bo'lmaydi!
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
                 O'chirish
               </button>
             </div>

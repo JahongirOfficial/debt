@@ -636,19 +636,33 @@ export function QarzdaftarDebts() {
                 <p className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">
                   Free tarif limiti to'lgan!
                 </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
-                  Siz {userDebtLimit} ta kutilayotgan qarz limitiga yetdingiz. Faqat eng eski {userDebtLimit} ta kutilayotgan qarzni boshqarishingiz mumkin (tahrirlash, to'lash, o'chirish). Qolgan qarzlar xiralashgan ko'rinishda va ular ustida amallar bajarib bo'lmaydi.
-                </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed mt-2">
-                  Ko'proq qarzlarni boshqarish uchun{' '}
+                {/* Mobile version - short text */}
+                <p className="block md:hidden text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                  Faqat {userDebtLimit} ta qarzni boshqarishingiz mumkin.{' '}
                   <button
                     className="inline text-orange-600 font-semibold hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline decoration-2 underline-offset-2"
                     onClick={() => navigate('/pricing')}
                   >
-                    tarifni yangilang
+                    Tarifni yangilang
                   </button>
                   .
                 </p>
+                {/* Desktop version - full text */}
+                <div className="hidden md:block">
+                  <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                    Siz {userDebtLimit} ta kutilayotgan qarz limitiga yetdingiz. Faqat eng eski {userDebtLimit} ta kutilayotgan qarzni boshqarishingiz mumkin (tahrirlash, to'lash, o'chirish). Qolgan qarzlar xiralashgan ko'rinishda va ular ustida amallar bajarib bo'lmaydi.
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed mt-2">
+                    Ko'proq qarzlarni boshqarish uchun{' '}
+                    <button
+                      className="inline text-orange-600 font-semibold hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 underline decoration-2 underline-offset-2"
+                      onClick={() => navigate('/pricing')}
+                    >
+                      tarifni yangilang
+                    </button>
+                    .
+                  </p>
+                </div>
               </div>
             </div>
           </div>

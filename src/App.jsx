@@ -389,7 +389,7 @@ export function QarzdaftarApp() {
 
       {/* Modern Suggestion Notification */}
       {showSuggestionNotification && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce-in">
+        <div className="fixed bottom-6 right-6 z-50 animate-bounce-in hidden md:block">
           <div
             onClick={handleSuggestionClick}
             className={`group relative cursor-pointer transform transition-all duration-500 hover:scale-105 animate-pulse-glow ${settings.theme === 'dark'

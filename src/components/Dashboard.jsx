@@ -128,7 +128,7 @@ export function QarzdaftarDashboard() {
                 }`}>
                 {getGreeting()}, {user?.username || 'Foydalanuvchi'}! 👋
               </h1>
-              <p className={`text-lg ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+              <p className={`text-lg hidden md:block ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
                 }`}>
                 {t('dashboard.subtitle', 'Qarzlar va moliyaviy ma\'lumotlar')}
               </p>
@@ -308,18 +308,18 @@ export function QarzdaftarDashboard() {
       </div>
 
       {/* Recent Activity with Modern Design */}
-      <div className={`rounded-3xl p-8 ${settings.theme === 'dark'
+      <div className={`rounded-3xl p-4 md:p-8 ${settings.theme === 'dark'
         ? 'bg-gradient-to-br from-slate-800/90 to-slate-900/90 border border-slate-700/50'
         : 'bg-white border border-gray-200'
         } shadow-2xl`}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className={`text-2xl font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h3 className={`text-lg md:text-2xl font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
             }`}>
             {t('dashboard.recentActivity', 'So\'nggi faoliyat')}
           </h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className={`text-sm ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+            <span className={`text-xs md:text-sm ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
               }`}>
               Jonli
             </span>
@@ -327,13 +327,13 @@ export function QarzdaftarDashboard() {
         </div>
 
         {debts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-8 md:py-12">
+            <div className="w-16 h-16 md:w-24 md:h-24 mx-auto mb-4 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 md:w-12 md:h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <p className={`text-lg font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
+            <p className={`text-base md:text-lg font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
               }`}>
               {t('dashboard.noActivity', 'Hali faoliyat yo\'q')}
             </p>
@@ -343,35 +343,35 @@ export function QarzdaftarDashboard() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4">
             {debts.slice(0, 5).map((debt, index) => (
               <div
                 key={debt._id}
-                className={`flex items-center justify-between p-4 rounded-2xl transition-all duration-300 hover:scale-[1.02] ${settings.theme === 'dark'
+                className={`flex items-center justify-between p-3 md:p-4 rounded-xl md:rounded-2xl transition-all duration-300 hover:scale-[1.02] ${settings.theme === 'dark'
                   ? 'bg-slate-700/60 hover:bg-slate-700/80'
                   : 'bg-gray-50 hover:bg-gray-100'
                   } border ${settings.theme === 'dark' ? 'border-slate-600/50' : 'border-gray-200'
                   }`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="flex items-center space-x-4">
-                  <div className={`relative w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg ${debt.status === 'pending'
+                <div className="flex items-center space-x-3 md:space-x-4">
+                  <div className={`relative w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-lg ${debt.status === 'pending'
                     ? 'bg-gradient-to-br from-orange-500 to-red-500'
                     : 'bg-gradient-to-br from-green-500 to-emerald-500'
                     }`}>
                     {debt.creditor.charAt(0).toUpperCase()}
                     {debt.status === 'pending' && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full"></div>
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className={`font-semibold text-lg ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
+                    <p className={`font-semibold text-sm md:text-lg ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
                       }`}>
                       {debt.creditor}
                     </p>
-                    <p className={`text-sm ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                    <p className={`text-xs md:text-sm ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
                       }`}>
                       {new Date(debt.createdAt).toLocaleDateString('uz-UZ', {
                         year: 'numeric',
@@ -382,23 +382,25 @@ export function QarzdaftarDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-xl font-bold mb-1 ${debt.status === 'pending' ? 'text-red-600' : 'text-green-600'
+                  <p className={`text-sm md:text-xl font-bold mb-1 ${debt.status === 'pending' ? 'text-red-600' : 'text-green-600'
                     }`}>
                     {formatCurrency(debt.amount, debt.currency || currency, language)}
                   </p>
-                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${debt.status === 'pending'
+                  <div className={`inline-flex items-center px-2 md:px-3 py-1 rounded-full text-xs font-medium ${debt.status === 'pending'
                     ? 'bg-red-100 text-red-800'
                     : 'bg-green-100 text-green-800'
                     }`}>
                     {debt.status === 'pending' ? (
                       <>
-                        <div className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></div>
-                        {t('common.pending', 'Kutilmoqda')}
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full mr-1 md:mr-2 animate-pulse"></div>
+                        <span className="hidden md:inline">{t('common.pending', 'Kutilmoqda')}</span>
+                        <span className="md:hidden">Kutish</span>
                       </>
                     ) : (
                       <>
-                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                        {t('common.paid', 'To\'langan')}
+                        <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full mr-1 md:mr-2"></div>
+                        <span className="hidden md:inline">{t('common.paid', 'To\'langan')}</span>
+                        <span className="md:hidden">To'landi</span>
                       </>
                     )}
                   </div>
@@ -406,16 +408,7 @@ export function QarzdaftarDashboard() {
               </div>
             ))}
 
-            {debts.length > 5 && (
-              <div className="text-center pt-4">
-                <button className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105 ${settings.theme === 'dark'
-                  ? 'bg-slate-700 hover:bg-slate-600 text-slate-100 border border-slate-600'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  } shadow-lg hover:shadow-xl`}>
-                  Barchasini ko'rish ({debts.length - 5} ta qolgan)
-                </button>
-              </div>
-            )}
+
           </div>
         )}
       </div>

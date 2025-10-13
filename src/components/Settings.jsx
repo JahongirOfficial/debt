@@ -170,20 +170,20 @@ export function QarzdaftarSettings() {
         {/* Modern Settings Cards */}
         <div className="space-y-6">
           {/* Language Settings */}
-          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3 dark:text-slate-100">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                   </svg>
                 </div>
                 {t('settings.language.title', 'Til sozlamalari')}
               </h3>
               
-              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-2xl p-5 border border-white/40 dark:border-slate-600/50">
+              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{t('settings.language.interface', 'Interfeys tili')}</h4>
@@ -212,20 +212,20 @@ export function QarzdaftarSettings() {
           </div>
           
           {/* Currency Settings */}
-          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3 dark:text-slate-100">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 {t('settings.currency.title', 'Valyuta sozlamalari')}
               </h3>
               
-              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-2xl p-5 border border-white/40 dark:border-slate-600/50">
+              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{t('settings.currency.main', 'Asosiy valyuta')}</h4>
@@ -255,18 +255,18 @@ export function QarzdaftarSettings() {
           </div>
           
           {/* Theme Settings */}
-          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-indigo-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-indigo-500/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3 dark:text-slate-100">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg md:rounded-xl flex items-center justify-center">
                   {settings.theme === 'dark' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                   )}
@@ -314,13 +314,13 @@ export function QarzdaftarSettings() {
           </div>
           
           {/* About Section */}
-          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300">
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 via-slate-500/10 to-gray-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 via-slate-500/10 to-gray-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div className="relative">
-              <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3 dark:text-slate-100">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-500 to-slate-500 rounded-xl flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-gray-500 to-slate-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -328,58 +328,58 @@ export function QarzdaftarSettings() {
               </h3>
               
               <div className="space-y-4">
-                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-2xl p-5 border border-white/40 dark:border-slate-600/50">
+                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-800 dark:text-slate-100">{t('settings.about.totalDebts', 'Jami qarzlar')}</h4>
-                        <p className="text-sm text-gray-600 dark:text-slate-300">Yaratilgan qarzlar soni</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-slate-100 text-sm md:text-base">{t('settings.about.totalDebts', 'Jami qarzlar')}</h4>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-slate-300">Yaratilgan qarzlar soni</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    <div className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">
                       {t('settings.about.noDebts', '0')}
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-2xl p-5 border border-white/40 dark:border-slate-600/50">
+                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-800 dark:text-slate-100">{t('settings.about.selectedLanguage', 'Tanlangan til')}</h4>
-                        <p className="text-sm text-gray-600 dark:text-slate-300">Joriy interfeys tili</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-slate-100 text-sm md:text-base">{t('settings.about.selectedLanguage', 'Tanlangan til')}</h4>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-slate-300">Joriy interfeys tili</p>
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    <div className="text-sm md:text-lg font-semibold text-green-600 dark:text-green-400">
                       {t(`languages.${settings.language || language}`, settings.language || language)}
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-2xl p-5 border border-white/40 dark:border-slate-600/50">
+                <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-semibold text-gray-800 dark:text-slate-100">{t('settings.about.mainCurrency', 'Asosiy valyuta')}</h4>
-                        <p className="text-sm text-gray-600 dark:text-slate-300">Qarzlar ko'rsatish valyutasi</p>
+                        <h4 className="font-semibold text-gray-800 dark:text-slate-100 text-sm md:text-base">{t('settings.about.mainCurrency', 'Asosiy valyuta')}</h4>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-slate-300">Qarzlar ko'rsatish valyutasi</p>
                       </div>
                     </div>
-                    <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                    <div className="text-sm md:text-lg font-semibold text-orange-600 dark:text-orange-400">
                       {t(`currencies.${settings.currency}`, settings.currency)}
                     </div>
                   </div>
