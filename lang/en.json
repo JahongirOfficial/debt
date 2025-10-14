@@ -157,7 +157,18 @@
       "viewHistory": "View History",
       "deleteReasonPrompt": "Enter reason for deletion (optional):",
       "payReasonPrompt": "Enter reason for payment (optional):",
-      "reason": "Reason"
+      "reason": "Reason",
+      "adjustAmount": "Adjust Amount",
+      "increaseAmount": "Increase Amount",
+      "decreaseAmount": "Decrease Amount",
+      "currentAmount": "Current Amount",
+      "amountToAdd": "Amount to Add",
+      "amountToSubtract": "Amount to Subtract",
+      "adjustmentReason": "Adjustment Reason",
+      "adjustmentReasonPlaceholder": "Enter adjustment reason...",
+      "addAmount": "Add",
+      "subtractAmount": "Subtract",
+      "adjustmentError": "Amount to subtract cannot be greater than current debt amount"
     },
     "created": "Created",
     "updated": "Updated",
@@ -485,6 +496,15 @@
       "title": "Theme Settings",
       "color": "Color Theme",
       "description": "Select light or dark theme"
+    },
+    "refresh": {
+      "title": "Refresh Application",
+      "description": "Perform a hard refresh of the application (Ctrl+Shift+R)",
+      "button": "Refresh App",
+      "confirmTitle": "Confirm Application Refresh",
+      "confirmMessage": "This action will completely reload the application and all unsaved data will be lost. Do you want to continue?",
+      "confirm": "Yes, Refresh",
+      "cancel": "Cancel"
     }
   },
   "logout": "Logout"

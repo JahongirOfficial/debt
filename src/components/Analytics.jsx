@@ -22,32 +22,10 @@ export function QarzdaftarAnalytics() {
   // Fixed period to 'month' since we're removing the selection UI
   const analyticsPeriod = 'month';
 
-  // Fetch debt adjustments
+  // Set adjustments loading to false since we don't need to fetch them separately
   useEffect(() => {
-    const fetchDebtAdjustments = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await apiFetch('/debt-adjustments', { // Use apiFetch instead of fetch
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setDebtAdjustments(data.adjustments);
-        }
-      } catch (error) {
-        console.error('Error fetching debt adjustments:', error);
-      } finally {
-        setAdjustmentsLoading(false);
-      }
-    };
-
     if (!loading) {
-      fetchDebtAdjustments();
+      setAdjustmentsLoading(false);
     }
   }, [loading]);
 

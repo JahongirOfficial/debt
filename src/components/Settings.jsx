@@ -33,6 +33,7 @@ export function QarzdaftarSettings() {
   const { language, setLanguage } = useLanguage();
   const { user, settings, logout, updateUserSettings } = useAuth();
   const t = useTranslation(language);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
   
   // Function to handle upgrade button click - navigate to pricing plans
   const handleUpgradeClick = () => {
@@ -313,6 +314,43 @@ export function QarzdaftarSettings() {
             </div>
           </div>
           
+          {/* Hard Refresh Section */}
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-yellow-500/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+                {t('settings.refresh.title', 'Ilovani yangilash')}
+              </h3>
+              
+              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">{t('settings.refresh.button', 'Ilovani yangilash')}</h4>
+                    <p className="text-sm text-gray-600 dark:text-slate-300">{t('settings.refresh.description', 'Ilovani to\'liq qayta yuklash (Ctrl+Shift+R)')}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowRefreshModal(true)}
+                    className="group/btn relative px-4 py-3 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:from-red-600 hover:via-orange-600 hover:to-yellow-600 text-white text-sm font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400 rounded-xl blur opacity-30 group-hover/btn:opacity-50 transition-opacity duration-300"></div>
+                    <span className="relative flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      {t('settings.refresh.button', 'Ilovani yangilash')}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* About Section */}
           <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-r from-gray-500/10 via-slate-500/10 to-gray-600/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -389,6 +427,63 @@ export function QarzdaftarSettings() {
           </div>
         </div>
       </div>
+
+      {/* Modern Refresh Confirmation Modal */}
+      {showRefreshModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700/50 max-w-md w-full mx-4 animate-in zoom-in-95 duration-300">
+            {/* Modal Header */}
+            <div className="p-6 pb-4">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100">
+                    {t('settings.refresh.confirmTitle', 'Ilovani yangilashni tasdiqlang')}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                    Bu amal qaytarib bo'lmaydi
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-gray-700 dark:text-slate-300 leading-relaxed">
+                {t('settings.refresh.confirmMessage', 'Bu amalni bajarish ilova to\'liq qayta yuklanadi va barcha saqlanmagan ma\'lumotlar yo\'qoladi. Davom etishni xohlaysizmi?')}
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-6 pb-6">
+              <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  onClick={() => setShowRefreshModal(false)}
+                  className="px-4 py-2.5 text-gray-700 dark:text-slate-300 bg-gray-100/80 dark:bg-slate-700/80 hover:bg-gray-200/80 dark:hover:bg-slate-600/80 rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-gray-200/50 dark:border-slate-600/50"
+                >
+                  {t('settings.refresh.cancel', 'Bekor qilish')}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowRefreshModal(false);
+                    // Small delay for smooth modal close animation
+                    setTimeout(() => {
+                      window.location.reload(true);
+                    }, 200);
+                  }}
+                  className="px-4 py-2.5 bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 hover:from-red-600 hover:via-orange-600 hover:to-yellow-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {t('settings.refresh.confirm', 'Ha, yangilash')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

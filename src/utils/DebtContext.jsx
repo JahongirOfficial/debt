@@ -342,6 +342,54 @@ export const DebtProvider = ({ children }) => {
     }
   };
 
+  // Adjust debt amount (add or subtract)
+  const adjustDebtAmount = async (id, adjustmentData) => {
+    if (!user) return { success: false, message: 'User not authenticated' };
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch(`/debts/${id}/adjust`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(adjustmentData),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Optimistically update the local state immediately
+        setDebts(prevDebts => 
+          prevDebts.map(debt => 
+            debt._id === id ? { ...debt, ...data.debt } : debt
+          )
+        );
+        
+        // Return immediately after successful operation
+        const result = { success: true, debt: data.debt };
+        
+        // Update ratings in the background without blocking
+        setTimeout(async () => {
+          try {
+            // Recalculate ratings
+            await calculateRatings();
+          } catch (error) {
+            console.error('Error updating ratings:', error);
+          }
+        }, 0);
+        
+        return result;
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (err) {
+      console.error('Adjust debt amount error:', err);
+      return { success: false, message: 'Network error while adjusting debt amount' };
+    }
+  };
+
   // Fetch debts and ratings when user is authenticated
   useEffect(() => {
     if (user && !authLoading) {
@@ -370,7 +418,8 @@ export const DebtProvider = ({ children }) => {
     updateDebt,
     deleteDebt,
     fetchDebtHistory,
-    markDebtAsPaid
+    markDebtAsPaid,
+    adjustDebtAmount
   };
 
   return (

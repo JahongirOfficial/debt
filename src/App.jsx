@@ -23,6 +23,7 @@ import { useTranslation } from './utils/translationUtils';
 import { useLanguage } from './utils/LanguageContext.jsx';
 import { useAuth } from './utils/AuthContext.jsx';
 import { DebtProvider } from './utils/DebtContext.jsx';
+import { ToastProvider } from './utils/ToastContext.jsx';
 import { SkeletonLoader } from './components/SkeletonLoader';
 
 // Add CSS for modern animations
@@ -308,8 +309,9 @@ export function QarzdaftarApp() {
 
   // If user is authenticated, show the main app
   return (
-    <DebtProvider>
-      <style>{style}</style>
+    <ToastProvider>
+      <DebtProvider>
+        <style>{style}</style>
 
       {/* Check if current route is admin route */}
       {location.pathname.startsWith('/admin') ? (
@@ -467,6 +469,7 @@ export function QarzdaftarApp() {
 
       {/* Debug: Manual modal trigger (remove in production) */}
       {process.env.NODE_ENV === 'development' && null}
-    </DebtProvider>
+      </DebtProvider>
+    </ToastProvider>
   );
 }

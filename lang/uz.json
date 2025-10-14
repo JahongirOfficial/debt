@@ -157,7 +157,18 @@
       "viewHistory": "Tarixni ko'rish",
       "deleteReasonPrompt": "O'chirish sababini kiriting (ixtiyoriy):",
       "payReasonPrompt": "To'lash sababini kiriting (ixtiyoriy):",
-      "reason": "Sabab"
+      "reason": "Sabab",
+      "adjustAmount": "Miqdorni o'zgartirish",
+      "increaseAmount": "Miqdorni oshirish",
+      "decreaseAmount": "Miqdorni kamaytirish",
+      "currentAmount": "Hozirgi miqdor",
+      "amountToAdd": "Qo'shiladigan miqdor",
+      "amountToSubtract": "Ayiriladigan miqdor",
+      "adjustmentReason": "O'zgartirish sababi",
+      "adjustmentReasonPlaceholder": "O'zgartirish sababini kiriting...",
+      "addAmount": "Qo'shish",
+      "subtractAmount": "Ayirish",
+      "adjustmentError": "Ayiriladigan miqdor hozirgi qarz miqdoridan katta bo'lishi mumkin emas"
     },
     "created": "Yaratilgan",
     "updated": "Yangilangan",
@@ -485,6 +496,15 @@
       "title": "Mavzu sozlamalari",
       "color": "Rang mavzusi",
       "description": "Yorug' yoki qorong'u mavzuni tanlang"
+    },
+    "refresh": {
+      "title": "Ilovani yangilash",
+      "description": "Ilovani to'liq qayta yuklash (Ctrl+Shift+R)",
+      "button": "Ilovani yangilash",
+      "confirmTitle": "Ilovani yangilashni tasdiqlang",
+      "confirmMessage": "Bu amalni bajarish ilova to'liq qayta yuklanadi va barcha saqlanmagan ma'lumotlar yo'qoladi. Davom etishni xohlaysizmi?",
+      "confirm": "Ha, yangilash",
+      "cancel": "Bekor qilish"
     }
   },
   "logout": "Chiqish",

@@ -6,6 +6,7 @@ import { formatNumberWithSpaces, parseFormattedNumber } from '../utils/formatUti
 import { formatPhoneNumber, formatCurrency } from '../utils/debtUtils';
 import { useDebts } from '../utils/DebtContext';
 import { useAuth } from '../utils/AuthContext';
+import { useToast } from '../utils/ToastContext';
 import { SkeletonLoader } from './SkeletonLoader';
 
 export function QarzdaftarDebts() {
@@ -13,15 +14,19 @@ export function QarzdaftarDebts() {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
   const [currency] = useStoredState('qarzdaftar_currency', 'UZS');
   const t = useTranslation(language);
-  const { debts, loading, error, userTier, debtLimit, createDebt, updateDebt, deleteDebt, markDebtAsPaid, fetchDebtHistory } = useDebts();
+  const { debts, loading, error, userTier, debtLimit, createDebt, updateDebt, deleteDebt, markDebtAsPaid, fetchDebtHistory, adjustDebtAmount } = useDebts();
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(null);
   const [editingDebt, setEditingDebt] = useState(null); // For tracking which debt is being edited
   const [editForm, setEditForm] = useState({ amount: '', phone: '', countryCode: '+998', reason: '' }); // For edit form data
   const [debtHistory, setDebtHistory] = useState([]); // For storing debt history
   const [showHistoryModal, setShowHistoryModal] = useState(null); // For tracking which debt's history is being viewed
+  const [showAdjustModal, setShowAdjustModal] = useState(null); // For tracking which debt's amount is being adjusted
+  const [adjustForm, setAdjustForm] = useState({ amount: '', reason: '', type: 'add' }); // For adjustment form data
   const [activeTab, setActiveTab] = useState('dueToday'); // 'dueToday', 'dueTomorrow', 'pending', 'paid', 'all', 'threeDaysLeft', 'overdue'
+  const [mobileDropdown, setMobileDropdown] = useState(null); // For mobile dropdown click handling
   const [newDebt, setNewDebt] = useState({
     creditor: '',
     amount: '',
@@ -120,8 +125,8 @@ export function QarzdaftarDebts() {
   const addDebt = async () => {
     if (!newDebt.creditor || !newDebt.amount) return;
 
-    // No limit check here - allow adding debts even if limit is reached
-    // Backend will handle the logic for manageable vs non-manageable debts
+    // Store creditor name before closing modal
+    const creditorName = newDebt.creditor;
 
     const debtData = {
       ...newDebt,
@@ -131,44 +136,76 @@ export function QarzdaftarDebts() {
       currency: newDebt.currency || currency || 'UZS' // Use selected currency or default
     };
 
-    const result = await createDebt(debtData);
+    // Close the modal immediately for better UX
+    setShowAddForm(false);
+    // Reset the form to initial state with +998 prefix and today's date
+    setNewDebt({
+      creditor: '',
+      amount: '',
+      description: '',
+      phone: '',
+      countryCode: '+998',
+      debtDate: new Date().toISOString().split('T')[0],
+      currency: currency || 'UZS' // Reset to default currency
+    });
 
-    if (result.success) {
-      // Close the modal immediately after successful creation
-      setShowAddForm(false);
-      // Reset the form to initial state with +998 prefix and today's date
-      setNewDebt({
-        creditor: '',
-        amount: '',
-        description: '',
-        phone: '',
-        countryCode: '+998',
-        debtDate: new Date().toISOString().split('T')[0],
-        currency: currency || 'UZS' // Reset to default currency
-      });
+    // Show loading notification
+    showSuccess('Qarz qo\'shilmoqda...');
 
-      // The other operations (fetching debts and calculating ratings) will happen in the background
-      // without blocking the UI or keeping the modal open
-    } else {
-      // Handle error
-      console.error('Failed to create debt:', result.message);
+    // Call API in background
+    try {
+      const result = await createDebt(debtData);
+
+      if (result.success) {
+        showSuccess(`${creditorName} uchun qarz muvaffaqiyatli qo'shildi`);
+      } else {
+        console.error('Failed to create debt:', result.message);
+        showError(result.message || 'Qarz qo\'shishda xatolik yuz berdi');
+      }
+    } catch (error) {
+      console.error('Error creating debt:', error);
+      showError('Qarz qo\'shishda xatolik yuz berdi');
     }
   };
 
   const markAsPaidHandler = async (id, reason = '') => {
-    const result = await markDebtAsPaid(id, reason);
-    if (!result.success) {
-      console.error('Failed to mark debt as paid:', result.message);
+    // Show immediate feedback
+    showSuccess('To\'langan deb belgilanmoqda...');
+
+    try {
+      const result = await markDebtAsPaid(id, reason);
+      if (result.success) {
+        showSuccess('Qarz to\'langan deb belgilandi');
+      } else {
+        console.error('Failed to mark debt as paid:', result.message);
+        showError(result.message || 'Qarzni to\'langan deb belgilashda xatolik yuz berdi');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error marking debt as paid:', error);
+      showError('Qarzni to\'langan deb belgilashda xatolik yuz berdi');
+      return { success: false, message: error.message };
     }
-    return result;
   };
 
   const deleteDebtHandler = async (id, reason = '') => {
-    const result = await deleteDebt(id, reason);
-    if (!result.success) {
-      console.error('Failed to delete debt:', result.message);
+    // Show immediate feedback
+    showSuccess('O\'chirilmoqda...');
+
+    try {
+      const result = await deleteDebt(id, reason);
+      if (result.success) {
+        showSuccess('Qarz muvaffaqiyatli o\'chirildi');
+      } else {
+        console.error('Failed to delete debt:', result.message);
+        showError(result.message || 'Qarzni o\'chirishda xatolik yuz berdi');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error deleting debt:', error);
+      showError('Qarzni o\'chirishda xatolik yuz berdi');
+      return { success: false, message: error.message };
     }
-    return result;
   };
 
   // Improved modal close function for Add Debt modal
@@ -475,13 +512,29 @@ export function QarzdaftarDebts() {
       reason: editForm.reason
     };
 
-    const result = await updateDebt(editingDebt._id, updateData);
+    // Store debt ID before closing modal
+    const debtId = editingDebt._id;
 
-    if (result.success) {
-      setEditingDebt(null);
-      setEditForm({ amount: '', phone: '', countryCode: '+998', reason: '' });
-    } else {
-      console.error('Failed to update debt:', result.message);
+    // Close modal immediately for better UX
+    setEditingDebt(null);
+    setEditForm({ amount: '', phone: '', countryCode: '+998', reason: '' });
+
+    // Show loading notification
+    showSuccess('Yangilanmoqda...');
+
+    // Call API in background
+    try {
+      const result = await updateDebt(debtId, updateData);
+
+      if (result.success) {
+        showSuccess('Qarz ma\'lumotlari muvaffaqiyatli yangilandi');
+      } else {
+        console.error('Failed to update debt:', result.message);
+        showError(result.message || 'Qarzni yangilashda xatolik yuz berdi');
+      }
+    } catch (error) {
+      console.error('Error updating debt:', error);
+      showError('Qarzni yangilashda xatolik yuz berdi');
     }
   };
 
@@ -556,6 +609,106 @@ export function QarzdaftarDebts() {
       document.removeEventListener('keydown', handleEscKey);
     };
   }, [showHistoryModal]);
+
+  // Function to show debt amount adjustment modal
+  const showAdjustmentModal = (debt, type) => {
+    // Ensure only adjustment modal is open
+    setShowAddForm(false);
+    setEditingDebt(null);
+    setShowDetailsModal(null);
+    setShowHistoryModal(null);
+
+    setShowAdjustModal(debt);
+    setAdjustForm({
+      amount: '',
+      reason: '',
+      type: type // 'add' or 'subtract'
+    });
+  };
+
+  // Function to handle adjustment form changes
+  const handleAdjustFormChange = (field, value) => {
+    if (field === 'amount') {
+      // Format the input value with spaces
+      const formattedValue = formatNumberWithSpaces(value);
+      setAdjustForm(prev => ({
+        ...prev,
+        [field]: formattedValue
+      }));
+    } else {
+      setAdjustForm(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  // Function to save debt amount adjustment
+  const saveAdjustment = async () => {
+    if (!showAdjustModal || !adjustForm.amount) return;
+
+    const adjustmentData = {
+      amount: parseFormattedNumber(adjustForm.amount),
+      reason: adjustForm.reason,
+      type: adjustForm.type
+    };
+
+    const result = await adjustDebtAmount(showAdjustModal._id, adjustmentData);
+
+    if (result.success) {
+      setShowAdjustModal(null);
+      setAdjustForm({ amount: '', reason: '', type: 'add' });
+    } else {
+      console.error('Failed to adjust debt amount:', result.message);
+    }
+  };
+
+  // Function to cancel adjustment
+  const cancelAdjustment = () => {
+    setShowAdjustModal(null);
+    setAdjustForm({ amount: '', reason: '', type: 'add' });
+  };
+
+  // Handle backdrop click for Adjustment modal
+  const handleAdjustModalBackdropClick = (e) => {
+    if (e.target.id === 'adjust-modal-backdrop') {
+      cancelAdjustment();
+    }
+  };
+
+  // Handle ESC key press for Adjustment modal
+  React.useEffect(() => {
+    const handleEscKey = (e) => {
+      if (showAdjustModal && e.key === 'Escape') {
+        cancelAdjustment();
+      }
+    };
+
+    if (showAdjustModal) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showAdjustModal]);
+
+  // Handle click outside to close mobile dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mobileDropdown && !e.target.closest('.relative.group')) {
+        setMobileDropdown(null);
+      }
+    };
+
+    if (mobileDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [mobileDropdown]);
 
   // Show loading state
   if (loading) {
@@ -791,103 +944,6 @@ export function QarzdaftarDebts() {
           </div>
         </div>
 
-        {/* Old Add Debt Modal removed. Original is below as comment. */}
-        {/*
-        // <div id="modal-backdrop" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" onClick={handleAddModalBackdropClick}>
-        //   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-        //     <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4">{t('debts.addDebt', 'Yangi qarz qo\'shish')}</h3>
-        //     <form onSubmit={(e) => { e.preventDefault(); addDebt(); }}>
-        //       <div className="mb-4">
-        //         <label htmlFor="creditor" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-        //           {t('debts.creditor', 'Qarzchi')}
-        //         </label>
-        //         <input
-        //           type="text"
-        //           id="creditor"
-        //           value={newDebt.creditor}
-        //           onChange={(e) => setNewDebt({...newDebt, creditor: e.target.value})}
-        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //         />
-        //       </div>
-        //       <div className="mb-4">
-        //         <label htmlFor="amount" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-        //           {t('debts.amount', 'Summa')}
-        //         </label>
-        //         <input
-        //           type="text"
-        //           id="amount"
-        //           value={newDebt.amount}
-        //           onChange={handleAmountChange}
-        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //         />
-        //       </div>
-        //       <div className="mb-4">
-        //         <label htmlFor="phone" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-        //           {t('debts.phone', 'Telefon')}
-        //         </label>
-        //         <div className="flex">
-        //           <select
-        //             id="countryCode"
-        //             value={newDebt.countryCode}
-        //             onChange={(e) => handleCountryCodeChange(e.target.value)}
-        //             className="w-24 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //           >
-        //             {countryCodes.map(code => (
-        //               <option key={code.code} value={code.code}>{code.flag} {code.name}</option>
-        //             ))}
-        //           </select>
-        //           <input
-        //             type="text"
-        //             id="phone"
-        //             value={newDebt.phone}
-        //             onChange={handlePhoneChange}
-        //             className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //           />
-        //         </div>
-        //       </div>
-        //       <div className="mb-4">
-        //         <label htmlFor="description" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-        //           {t('debts.description', 'Izoh')}
-        //         </label>
-        //         <textarea
-        //           id="description"
-        //           value={newDebt.description}
-        //           onChange={(e) => setNewDebt({...newDebt, description: e.target.value})}
-        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //         />
-        //       </div>
-        //       <div className="mb-4">
-        //         <label htmlFor="debtDate" className="block text-gray-700 dark:text-gray-300 font-bold mb-2">
-        //           {t('debts.date', 'Sana')}
-        //         </label>
-        //         <input
-        //           type="date"
-        //           id="debtDate"
-        //           value={newDebt.debtDate}
-        //           onChange={(e) => setNewDebt({...newDebt, debtDate: e.target.value})}
-        //           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-700 dark:text-white transition-all"
-        //         />
-        //       </div>
-        //       <div className="flex justify-end">
-        //         <button
-        //           type="button"
-        //           onClick={closeModal}
-        //           className="bg-gray-100 dark:bg-gray-600 p-3 rounded-lg mr-2 hover:bg-gray-200 dark:hover:bg-gray-500 transition-all"
-        //         >
-        //           {t('debts.cancel', 'Bekor qilish')}
-        //         </button>
-        //         <button
-        //           type="submit"
-        //           className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white p-3 rounded-lg hover:shadow-lg transition-all"
-        //         >
-        //           {t('debts.add', 'Qo\'shish')}
-        //         </button>
-        //       </div>
-        //     </form>
-        //   </div>
-        // </div>
-      */}
-
 
 
 
@@ -920,8 +976,8 @@ export function QarzdaftarDebts() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-            <table className="min-w-full bg-white dark:bg-gray-800">
+          <div className="rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full bg-white dark:bg-gray-800">
               <thead>
                 <tr className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
                   <th className="py-2 px-2 text-left rounded-tl-lg text-xs font-medium">#</th>
@@ -947,8 +1003,9 @@ export function QarzdaftarDebts() {
                         : 'bg-gray-50 dark:bg-gray-700'
                         } ${isOverLimit
                           ? 'opacity-40 bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed'
-                          : 'hover:bg-orange-50 dark:hover:bg-gray-600'
+                          : 'hover:bg-orange-50 dark:hover:bg-gray-600 cursor-pointer'
                         } transition-all duration-200`}
+                      onClick={() => !isOverLimit && showDebtDetails(debt)}
                     >
                       <td className="py-2 px-2 text-gray-600 dark:text-gray-300 font-mono text-sm">
                         {index + 1}
@@ -992,68 +1049,114 @@ export function QarzdaftarDebts() {
                         </span>
                       </td>
                       <td className="py-2 px-2">
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => showDebtDetails(debt)}
-                            className={`p-2 rounded-full transition-colors ${isOverLimit
-                              ? 'bg-gray-50 text-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-                              : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-400 dark:hover:text-gray-300'
-                              }`}
-                            title={isOverLimit ? 'Limitdan tashqari qarz' : t('common.details', 'Batafsil')}
-                            disabled={isOverLimit}
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                          </button>
+                        <div className="flex items-center gap-1">
+                          {/* Amallar dropdown */}
                           {debt.status === 'pending' && !isOverLimit && (
-                            <>
+                            <div className="relative group">
                               <button
-                                onClick={() => startEditing(debt)}
-                                className="group relative p-2 rounded-xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 hover:from-blue-500/20 hover:to-indigo-500/20 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all duration-200 hover:scale-110 hover:shadow-lg"
-                                title={t('common.edit', 'Tahrirlash')}
-                              >
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="relative h-4 w-4 transform group-hover:rotate-12 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  const result = await markAsPaidHandler(debt._id, '');
-                                  // Optionally, you could show a notification or update the UI here
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMobileDropdown(mobileDropdown === debt._id ? null : debt._id);
                                 }}
-                                className="p-2 rounded-full bg-green-100 hover:bg-green-200 text-green-500 hover:text-green-700 dark:bg-green-900 dark:hover:bg-green-800 dark:text-green-400 dark:hover:text-green-300 transition-colors"
-                                title={t('debts.form.markAsPaid', 'To\'langan deb belgilash')}
+                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 dark:bg-blue-900/50 dark:hover:bg-blue-800/50 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                title="Amallar"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                 </svg>
                               </button>
-                              <button
-                                onClick={async () => {
-                                  const result = await deleteDebtHandler(debt._id, '');
-                                  // Optionally, you could show a notification or update the UI here
-                                }}
-                                className="p-2 rounded-full bg-red-100 hover:bg-red-200 text-red-500 hover:text-red-700 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                                title={t('common.delete', 'O\'chirish')}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </>
-                          )}
-                          {debt.status === 'pending' && isOverLimit && (
-                            <div className="flex items-center space-x-1">
-                              <span className="text-xs text-gray-400 dark:text-gray-500 italic px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-full">
-                                Limitdan tashqari
-                              </span>
+
+                              {/* Dropdown menu */}
+                              <div className={`absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 transition-all duration-200 z-10 ${mobileDropdown === debt._id
+                                ? 'opacity-100 visible'
+                                : 'opacity-0 invisible md:group-hover:opacity-100 md:group-hover:visible'
+                                }`}>
+                                <div className="p-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMobileDropdown(null);
+                                      startEditing(debt);
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    {t('common.edit', 'Tahrirlash')}
+                                  </button>
+
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setMobileDropdown(null);
+                                      const result = await markAsPaidHandler(debt._id, '');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    To'landi
+                                  </button>
+
+                                  <div className="border-t border-gray-200 dark:border-slate-600 my-1"></div>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMobileDropdown(null);
+                                      showAdjustmentModal(debt, 'add');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Qo'shish
+                                  </button>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMobileDropdown(null);
+                                      showAdjustmentModal(debt, 'subtract');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                                    </svg>
+                                    Ayirish
+                                  </button>
+
+                                  <div className="border-t border-gray-200 dark:border-slate-600 my-1"></div>
+
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      setMobileDropdown(null);
+                                      const result = await deleteDebtHandler(debt._id, '');
+                                    }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    {t('common.delete', 'O\'chirish')}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           )}
-
                         </div>
+                        {debt.status === 'pending' && isOverLimit && (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs text-gray-400 dark:text-gray-500 italic px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-full">
+                              Limitdan tashqari
+                            </span>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -1830,12 +1933,29 @@ export function QarzdaftarDebts() {
 
                           {historyItem.action === 'adjustment' && historyItem.previousAmount !== undefined && historyItem.newAmount !== undefined && (
                             <div>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">
-                                {formatCurrency(historyItem.previousAmount - historyItem.newAmount, historyItem.currency || currency || 'UZS', language)} to'landi
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {formatCurrency(historyItem.previousAmount, historyItem.currency || currency || 'UZS', language)} → {formatCurrency(historyItem.newAmount, historyItem.currency || currency || 'UZS', language)}
-                              </p>
+                              {historyItem.newAmount > historyItem.previousAmount ? (
+                                <div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {formatCurrency(historyItem.newAmount - historyItem.previousAmount, historyItem.currency || currency || 'UZS', language)} qo'shildi
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {formatCurrency(historyItem.previousAmount, historyItem.currency || currency || 'UZS', language)} → {formatCurrency(historyItem.newAmount, historyItem.currency || currency || 'UZS', language)}
+                                  </p>
+                                </div>
+                              ) : historyItem.newAmount < historyItem.previousAmount ? (
+                                <div>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {formatCurrency(historyItem.previousAmount - historyItem.newAmount, historyItem.currency || currency || 'UZS', language)} to'landi
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {formatCurrency(historyItem.previousAmount, historyItem.currency || currency || 'UZS', language)} → {formatCurrency(historyItem.newAmount, historyItem.currency || currency || 'UZS', language)}
+                                  </p>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                  Qarz miqdori o'zgartirilmadi
+                                </p>
+                              )}
                             </div>
                           )}
 
@@ -1878,7 +1998,178 @@ export function QarzdaftarDebts() {
             </div>
           </div>
         )}
+
+        {/* Debt Amount Adjustment Modal */}
+        {showAdjustModal && (
+          <div
+            id="adjust-modal-backdrop"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+            onClick={(e) => {
+              if (e.target.id === 'adjust-modal-backdrop') {
+                setShowAdjustModal(null);
+                setAdjustForm({ amount: '', reason: '', type: 'add' });
+              }
+            }}
+          >
+            <div
+              className="relative bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 rounded-2xl shadow-2xl w-full max-w-md animate-slideUp"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className={`relative p-4 ${adjustForm.type === 'add'
+                ? 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                : 'bg-gradient-to-r from-yellow-500 to-orange-500'
+                }`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xl font-bold text-white">
+                      {adjustForm.type === 'add'
+                        ? t('debts.form.increaseAmount', 'Qarz miqdorini oshirish')
+                        : t('debts.form.decreaseAmount', 'Qarz miqdorini kamaytirish')
+                      }
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {showAdjustModal.creditor} uchun
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowAdjustModal(null);
+                      setAdjustForm({ amount: '', reason: '', type: 'add' });
+                    }}
+                    className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-all duration-200"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Form */}
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('debts.form.currentAmount', 'Hozirgi miqdor')}
+                  </label>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <span className="text-lg font-bold text-gray-800 dark:text-white">
+                      {formatCurrency(showAdjustModal.amount, showAdjustModal.currency || currency || 'UZS', language)}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {adjustForm.type === 'add'
+                      ? t('debts.form.amountToAdd', 'Qo\'shiladigan miqdor')
+                      : t('debts.form.amountToSubtract', 'Ayiriladigan miqdor')
+                    } <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={adjustForm.amount}
+                    onChange={(e) => {
+                      const formattedValue = formatNumberWithSpaces(e.target.value);
+                      setAdjustForm({ ...adjustForm, amount: formattedValue });
+                    }}
+                    placeholder="0"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {t('debts.form.adjustmentReason', 'Sabab')}
+                  </label>
+                  <textarea
+                    value={adjustForm.reason}
+                    onChange={(e) => setAdjustForm({ ...adjustForm, reason: e.target.value })}
+                    placeholder={t('debts.form.adjustmentReasonPlaceholder', 'O\'zgartirish sababini kiriting...')}
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                {adjustForm.type === 'subtract' && parseFormattedNumber(adjustForm.amount) > showAdjustModal.amount && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-red-700 dark:text-red-300 text-sm">
+                      {t('debts.form.adjustmentError', 'Ayiriladigan miqdor hozirgi qarz miqdoridan katta bo\'lishi mumkin emas.')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowAdjustModal(null);
+                      setAdjustForm({ amount: '', reason: '', type: 'add' });
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    {t('common.cancel', 'Bekor qilish')}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!adjustForm.amount) return;
+
+                      const adjustmentAmount = parseFormattedNumber(adjustForm.amount);
+                      if (adjustForm.type === 'subtract' && adjustmentAmount > showAdjustModal.amount) {
+                        return;
+                      }
+
+                      // Store data before closing modal
+                      const debtId = showAdjustModal._id;
+                      const adjustmentType = adjustForm.type;
+                      const adjustmentData = {
+                        amount: adjustmentAmount,
+                        type: adjustForm.type,
+                        reason: adjustForm.reason || `Qarz miqdori ${adjustForm.type === 'add' ? 'oshirildi' : 'kamaytirildi'}`
+                      };
+
+                      // Close modal immediately for better UX
+                      setShowAdjustModal(null);
+                      setAdjustForm({ amount: '', reason: '', type: 'add' });
+
+                      // Show loading notification
+                      showSuccess('Jarayon amalga oshirilmoqda...');
+
+                      // Call API in background
+                      try {
+                        const result = await adjustDebtAmount(debtId, adjustmentData);
+
+                        if (result.success) {
+                          showSuccess(
+                            adjustmentType === 'add'
+                              ? `Qarz miqdori ${formatNumberWithSpaces(adjustmentAmount.toString())} ${currency} ga oshirildi`
+                              : `Qarz miqdori ${formatNumberWithSpaces(adjustmentAmount.toString())} ${currency} ga kamaytirildi`
+                          );
+                        } else {
+                          console.error('Failed to adjust debt amount:', result.message);
+                          showError(result.message || 'Qarz miqdorini o\'zgartirishda xatolik yuz berdi');
+                        }
+                      } catch (error) {
+                        console.error('Error adjusting debt amount:', error);
+                        showError('Qarz miqdorini o\'zgartirishda xatolik yuz berdi');
+                      }
+                    }}
+                    disabled={!adjustForm.amount || (adjustForm.type === 'subtract' && parseFormattedNumber(adjustForm.amount) > showAdjustModal.amount)}
+                    className={`flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors ${adjustForm.type === 'add'
+                      ? 'bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400'
+                      : 'bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400'
+                      } disabled:cursor-not-allowed`}
+                  >
+                    {adjustForm.type === 'add'
+                      ? t('debts.form.addAmount', 'Qo\'shish')
+                      : t('debts.form.subtractAmount', 'Ayirish')
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </div >
   );
 }
