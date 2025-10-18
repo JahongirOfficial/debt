@@ -9,6 +9,7 @@
     "dev": "nodemon server.js --ignore 'node_modules/' --ignore 'logs/'",
     "dev:bot": "nodemon server.js --ignore 'node_modules/' --ignore 'logs/' --env-file=.env",
     "migrate": "node migrations/001_add_telegram_fields.js",
+    "migrate:branches": "node migrations/002_add_branch_support.js",
     "test:telegram": "node test-telegram.js"
   },
   "keywords": [

@@ -28,6 +28,7 @@
   "navigation": {
     "dashboard": "Панель управления",
     "debts": "Долги",
+    "branches": "Филиалы",
     "calculator": "Калькулятор",
     "ratings": "Рейтинги",
     "analytics": "Аналитика",
@@ -381,7 +382,7 @@
       "month": "в месяц",
       "currentPlan": "Текущий план",
       "upgrade": "Обновить план",
-      "popular": "Самый популярный",
+      "popular": "популярный",
       "feature1": "Управление 20 долгами",
       "feature2": "Базовые напоминания",
       "feature3": "Поддержка Telegram",

@@ -28,6 +28,7 @@
   "navigation": {
     "dashboard": "Bosh menu",
     "debts": "Qarzlar",
+    "branches": "Filiallar",
     "calculator": "Kalkulyator",
     "ratings": "Reytinglar",
     "analytics": "Analitika",
@@ -381,7 +382,7 @@
       "month": "oyiga",
       "currentPlan": "Joriy tarif",
       "upgrade": "Tarifni yangilash",
-      "popular": "Eng ommabop",
+      "popular": "Ommabop",
       "feature1": "3 ta SMS xabar",
       "feature2": "Asosiy eslatmalar",
       "feature3": "Telegram qo'llab-quvvatlash",
@@ -411,7 +412,7 @@
     "title": "Tarif rejalari",
     "subtitle": "O'zingizga mos tarifni tanlang",
     "month": "so'm",
-    "popular": "Eng ommabop",
+    "popular": "Ommabop",
     "currentPlan": "Joriy tarif",
     "upgrade": "Tarifni yangilash",
     "oneTime": "Bir martalik",
@@ -419,7 +420,6 @@
       "name": "Bepul",
       "feature1": "20 ta qarzni boshqarish",
       "feature2": "Texnik qo'llab-quvvatlash",
-
       "feature4": "Telegram eslatmalar",
       "feature5": "SMS xabar xizmati",
       "feature6": "5 ta AI post dizayn"
@@ -428,7 +428,6 @@
       "name": "Standart",
       "feature1": "150 ta qarzni boshqarish",
       "feature2": "Kunlik Excel hisobotlar",
-
       "feature4": "Telegram eslatmalar",
       "feature5": "Maxsus qo'llab-quvvatlash",
       "feature6": "SMS xabar xizmati",
@@ -438,7 +437,6 @@
     "pro": {
       "name": "Pro",
       "feature1": "Cheksiz qarzni boshqarish",
-
       "feature3": "Kunlik Excel hisobotlar",
       "feature4": "Telegram eslatmalar",
       "feature5": "24/7 qo'llab-quvvatlash",

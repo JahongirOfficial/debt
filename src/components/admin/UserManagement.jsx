@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/api';
+import { UserProfileModal } from './UserProfileModal';
 
 export function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -17,6 +18,9 @@ export function UserManagement() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [subscriptionModal, setSubscriptionModal] = useState(null); // { userId, username, currentTier }
+  const [profileModal, setProfileModal] = useState(null); // { userId, username }
+  const [reportModal, setReportModal] = useState(null); // { userId, username }
+  const [sendingReport, setSendingReport] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -205,6 +209,41 @@ export function UserManagement() {
     setOpenDropdown(null);
   };
 
+  const handleSendReport = (userId, username) => {
+    setReportModal({ userId, username });
+    setOpenDropdown(null);
+  };
+
+  const sendReportToUser = async () => {
+    if (!reportModal) return;
+
+    try {
+      setSendingReport(true);
+      
+      const response = await apiFetch(`/admin/users/${reportModal.userId}/send-report`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`✅ ${data.message}`);
+        setReportModal(null);
+      } else {
+        const errorData = await response.json();
+        alert(`❌ Xatolik: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Error sending report:', error);
+      alert('❌ Server bilan bog\'lanishda xatolik yuz berdi');
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
   const handleSubscriptionChange = (userId, username, currentTier, newTier) => {
     if (newTier === 'free') {
       // For free tier, no expiration needed
@@ -263,6 +302,11 @@ export function UserManagement() {
         color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
         text: 'Bepul',
         icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+      },
+      lite: {
+        color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        text: 'Lite',
+        icon: 'M13 10V3L4 14h7v7l9-11h-7z'
       },
       standard: {
         color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
@@ -521,6 +565,7 @@ export function UserManagement() {
                         style={{ backgroundImage: 'none' }}
                       >
                         <option value="free">Bepul</option>
+                        <option value="lite">Lite</option>
                         <option value="standard">Standart</option>
                         <option value="pro">Professional</option>
                       </select>
@@ -533,7 +578,11 @@ export function UserManagement() {
                   </div>
 
                   <div className="flex flex-col space-y-2">
-                    <button className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors duration-200">
+                    <button 
+                      onClick={() => setProfileModal({ userId: user.id || user._id, username: user.username })}
+                      className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors duration-200"
+                      title="Profil ko'rish"
+                    >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -553,8 +602,17 @@ export function UserManagement() {
 
                       {/* Dropdown Content */}
                       {openDropdown === (user.id || user._id) && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
+                        <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
                           <div className="py-1">
+                            <button
+                              onClick={() => handleSendReport(user.id || user._id, user.username)}
+                              className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors duration-200 flex items-center"
+                            >
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Hisobot yuborish
+                            </button>
                             <button
                               onClick={() => handleDeleteClick(user.id || user._id, user.username)}
                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900 transition-colors duration-200 flex items-center"
@@ -810,6 +868,81 @@ export function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Send Report Modal */}
+      {reportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-blue-100 dark:bg-blue-900 rounded-full">
+              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+              Hisobot Yuborish
+            </h3>
+
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+              <span className="font-medium">{reportModal.username}</span> foydalanuvchisiga ertaga to'lanishi kerak bo'lgan qarzlar hisobotini Telegram orqali yuborasizmi?
+            </p>
+
+            <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm text-blue-800 dark:text-blue-200">
+                  <p className="font-medium mb-1">Hisobot tarkibi:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Ertaga to'lanishi kerak bo'lgan qarzlar ro'yxati</li>
+                    <li>Har bir qarz uchun: qarzdor nomi, summa, tavsif</li>
+                    <li>Jami summa va qarzlar soni</li>
+                    <li>Excel fayl (CSV format)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setReportModal(null)}
+                disabled={sendingReport}
+                className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-200 font-medium disabled:opacity-50"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={sendReportToUser}
+                disabled={sendingReport}
+                className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 font-medium flex items-center justify-center disabled:opacity-50"
+              >
+                {sendingReport ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Yuborilmoqda...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                    Yuborish
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={!!profileModal}
+        userId={profileModal?.userId}
+        username={profileModal?.username}
+        onClose={() => setProfileModal(null)}
+      />
     </div>
   );
 }

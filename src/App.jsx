@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QarzdaftarDashboard } from './components/Dashboard';
 import { QarzdaftarDebts } from './components/Debts';
+import { QarzdaftarBranches } from './components/Branches';
 import { QarzdaftarCalculator } from './components/Calculator';
 import { QarzdaftarRatings } from './components/Ratings';
 import { QarzdaftarAnalytics } from './components/Analytics';
 import { QarzdaftarSettings } from './components/Settings';
 import { QarzdaftarSMSNotifications } from './components/SMSNotifications';
-import { QarzdaftarPricingPlans } from './components/PricingPlans';
+import QarzdaftarPricingPlans from './components/PricingPlans.jsx';
 import { Login } from './components/auth/Login';
 import { Register } from './components/auth/Register';
 import { AdminLayout } from './components/admin/AdminLayout';
@@ -22,6 +23,7 @@ import TelegramConnectionModal from './components/TelegramConnectionModal';
 import { useTranslation } from './utils/translationUtils';
 import { useLanguage } from './utils/LanguageContext.jsx';
 import { useAuth } from './utils/AuthContext.jsx';
+import { BranchProvider } from './utils/BranchContext.jsx';
 import { DebtProvider } from './utils/DebtContext.jsx';
 import { ToastProvider } from './utils/ToastContext.jsx';
 import { SkeletonLoader } from './components/SkeletonLoader';
@@ -81,6 +83,8 @@ export function QarzdaftarApp() {
         return 'dashboard';
       case '/debts':
         return 'debts';
+      case '/branches':
+        return 'branches';
       case '/calculator':
         return 'calculator';
       case '/ratings':
@@ -124,6 +128,9 @@ export function QarzdaftarApp() {
         break;
       case '/debts':
         setActiveSection('debts');
+        break;
+      case '/branches':
+        setActiveSection('branches');
         break;
       case '/calculator':
         setActiveSection('calculator');
@@ -175,7 +182,7 @@ export function QarzdaftarApp() {
 
   // Handle navigation for unauthenticated users trying to access protected routes
   useEffect(() => {
-    const protectedRoutes = ['/dashboard', '/debts', '/calculator', '/ratings', '/analytics', '/pricing', '/settings'];
+    const protectedRoutes = ['/dashboard', '/debts', '/branches', '/calculator', '/ratings', '/analytics', '/pricing', '/settings'];
     const isAdminRoute = location.pathname.startsWith('/admin');
 
     if (!user && (protectedRoutes.includes(location.pathname) || isAdminRoute)) {
@@ -231,7 +238,7 @@ export function QarzdaftarApp() {
       setTimeout(() => {
         setShowSuggestionNotification(false);
       }, 8000);
-    }, 30000); // 30 seconds
+    }, 120000); // 30 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -310,7 +317,8 @@ export function QarzdaftarApp() {
   // If user is authenticated, show the main app
   return (
     <ToastProvider>
-      <DebtProvider>
+      <BranchProvider>
+        <DebtProvider>
         <style>{style}</style>
 
       {/* Check if current route is admin route */}
@@ -378,6 +386,7 @@ export function QarzdaftarApp() {
               <Route path="/register" element={<Register />} />
               <Route path="/dashboard" element={<QarzdaftarDashboard />} />
               <Route path="/debts" element={<QarzdaftarDebts />} />
+              <Route path="/branches" element={<QarzdaftarBranches />} />
               <Route path="/calculator" element={<QarzdaftarCalculator />} />
               <Route path="/ratings" element={<QarzdaftarRatings />} />
               <Route path="/analytics" element={<QarzdaftarAnalytics />} />
@@ -469,7 +478,8 @@ export function QarzdaftarApp() {
 
       {/* Debug: Manual modal trigger (remove in production) */}
       {process.env.NODE_ENV === 'development' && null}
-      </DebtProvider>
+        </DebtProvider>
+      </BranchProvider>
     </ToastProvider>
   );
 }

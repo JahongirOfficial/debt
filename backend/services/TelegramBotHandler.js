@@ -957,6 +957,49 @@ class TelegramBotHandler {
       botToken: this.botToken ? '***' + this.botToken.slice(-4) : 'Not set'
     };
   }
+
+  // Public method to send message
+  async sendMessage(chatId, message, options = {}) {
+    try {
+      return await this.bot.sendMessage(chatId, message, {
+        parse_mode: 'HTML',
+        ...options
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }
+
+  // Public method to send document
+  async sendDocument(chatId, document, caption = '', options = {}) {
+    try {
+      if (typeof document === 'object' && document.filename && document.content) {
+        // Create temporary file
+        const tempFilePath = path.join(this.tempDir, document.filename);
+        await fs.writeFile(tempFilePath, document.content);
+        
+        const result = await this.bot.sendDocument(chatId, tempFilePath, {
+          caption: caption,
+          ...options
+        });
+
+        // Clean up temporary file
+        await this.cleanupFiles([tempFilePath]);
+        
+        return result;
+      } else {
+        // Direct file path
+        return await this.bot.sendDocument(chatId, document, {
+          caption: caption,
+          ...options
+        });
+      }
+    } catch (error) {
+      console.error('Error sending document:', error);
+      throw error;
+    }
+  }
 }
 
 export default TelegramBotHandler;

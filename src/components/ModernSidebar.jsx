@@ -3,15 +3,20 @@ import { useTranslation } from '../utils/translationUtils';
 import { useLanguage } from '../utils/LanguageContext.jsx';
 import { useAuth } from '../utils/AuthContext.jsx';
 import { useDebts } from '../utils/DebtContext.jsx';
+import { useBranches } from '../utils/BranchContext.jsx';
 import { useNavigate } from 'react-router-dom';
+import { BranchSelector } from './branches/BranchSelector';
+import { BranchCreateModal } from './branches/BranchCreateModal';
 
 export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, onCollapseChange }) {
     const { language } = useLanguage();
     const { user, settings, logout } = useAuth();
     const { debts, userTier, debtLimit } = useDebts();
+    const { branches } = useBranches();
     const navigate = useNavigate();
     const t = useTranslation(language);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [showCreateBranchModal, setShowCreateBranchModal] = useState(false);
 
     // Check if user has reached the pending debt limit
     const pendingDebtsCount = debts ? debts.filter(debt => debt.status === 'pending').length : 0;
@@ -46,6 +51,17 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.debts', 'Qarzlar'),
+            badge: null
+        },
+        {
+            id: 'branches',
+            route: '/branches',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            ),
+            label: t('navigation.branches', 'Filiallar'),
             badge: null
         },
         {
@@ -123,6 +139,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 return 'from-purple-500 to-pink-500';
             case 'standard':
                 return 'from-blue-500 to-indigo-500';
+            case 'lite':
+                return 'from-green-500 to-emerald-500';
             default:
                 return 'from-gray-500 to-gray-600';
         }
@@ -134,6 +152,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 return 'PRO';
             case 'standard':
                 return 'STANDARD';
+            case 'lite':
+                return 'LITE';
             default:
                 return 'FREE';
         }
@@ -151,7 +171,7 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
 
             {/* Sidebar */}
             <div className={`
-        fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out
+        fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         ${isCollapsed ? 'w-16' : 'w-[267px]'}
         ${settings.theme === 'dark'
@@ -161,8 +181,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
         shadow-2xl
       `}>
 
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200/20">
+                {/* Fixed Header */}
+                <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200/20">
                     {!isCollapsed && (
                         <div className="flex items-center space-x-3">
                             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${settings.theme === 'dark' ? 'from-blue-500 to-cyan-500' : 'from-orange-500 to-red-500'} flex items-center justify-center shadow-lg`}>
@@ -208,9 +228,9 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                     </button>
                 </div>
 
-                {/* User Profile */}
+                {/* Fixed User Profile */}
                 {!isCollapsed && (
-                    <div className="p-4 border-b border-gray-200/20">
+                    <div className="flex-shrink-0 p-4 border-b border-gray-200/20">
                         <div className="flex items-center space-x-3">
                             <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getSubscriptionColor(user?.subscriptionTier)} flex items-center justify-center text-white font-semibold text-lg shadow-lg`}>
                                 {user?.username?.charAt(0).toUpperCase() || 'U'}
@@ -229,8 +249,15 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                     </div>
                 )}
 
-                {/* Navigation */}
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                {/* Fixed Branch Selector */}
+                {!isCollapsed && branches.length > 0 && (
+                    <div className="flex-shrink-0 p-4 border-b border-gray-200/20">
+                        <BranchSelector onCreateBranch={() => setShowCreateBranchModal(true)} />
+                    </div>
+                )}
+
+                {/* Scrollable Navigation */}
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto min-h-0">
                     {menuItems.map((item) => {
                         const isActive = activeSection === item.id;
                         return (
@@ -312,6 +339,14 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                     )}
                 </div>
             </div>
+            {/* Branch Create Modal */}
+            <BranchCreateModal
+                isOpen={showCreateBranchModal}
+                onClose={() => setShowCreateBranchModal(false)}
+                onSuccess={() => {
+                    setShowCreateBranchModal(false);
+                }}
+            />
         </>
     );
 }

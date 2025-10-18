@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { useBranches } from './BranchContext';
 import { apiFetch } from './api';
 
 // Create the context
@@ -8,6 +9,7 @@ const DebtContext = createContext();
 // Provider component
 export const DebtProvider = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
+  const { activeBranch } = useBranches();
   const [debts, setDebts] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,12 +19,12 @@ export const DebtProvider = ({ children }) => {
 
   // Fetch debts from backend (with loading state for initial load)
   const fetchDebts = async () => {
-    if (!user) return;
+    if (!user || !activeBranch) return;
     
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await apiFetch('/debts', {
+      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -48,11 +50,11 @@ export const DebtProvider = ({ children }) => {
 
   // Refresh debts without loading state (for updates after CRUD operations)
   const refreshDebts = async () => {
-    if (!user) return;
+    if (!user || !activeBranch) return;
     
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch('/debts', {
+      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -134,11 +136,11 @@ export const DebtProvider = ({ children }) => {
 
   // Create a new debt
   const createDebt = async (debtData) => {
-    if (!user) return { success: false, message: 'User not authenticated' };
+    if (!user || !activeBranch) return { success: false, message: 'User not authenticated or no active branch' };
     
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch('/debts', {
+      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -390,9 +392,9 @@ export const DebtProvider = ({ children }) => {
     }
   };
 
-  // Fetch debts and ratings when user is authenticated
+  // Fetch debts and ratings when user is authenticated and branch is active
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && activeBranch) {
       fetchDebts();
       fetchRatings();
     } else if (!user && !authLoading) {
@@ -400,8 +402,19 @@ export const DebtProvider = ({ children }) => {
       setDebts([]);
       setRatings([]);
       setLoading(false);
+    } else if (user && !activeBranch) {
+      // Clear debts when no active branch
+      setDebts([]);
+      setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, activeBranch]);
+
+  // Refresh debts when active branch changes
+  useEffect(() => {
+    if (user && activeBranch) {
+      refreshDebts();
+    }
+  }, [activeBranch]);
 
   // Context value
   const value = {

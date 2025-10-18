@@ -28,6 +28,7 @@
   "navigation": {
     "dashboard": "Dashboard",
     "debts": "Debts",
+    "branches": "Branches",
     "calculator": "Calculator",
     "ratings": "Ratings",
     "analytics": "Analytics",
@@ -381,7 +382,7 @@
       "month": "per month",
       "currentPlan": "Current Plan",
       "upgrade": "Upgrade Plan",
-      "popular": "Most Popular",
+      "popular": "Popular",
       "feature1": "Manage 20 debts",
       "feature2": "Basic reminders",
       "feature3": "Telegram support",

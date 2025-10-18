@@ -28,6 +28,7 @@
   "navigation": {
     "dashboard": "Панели идоракунӣ",
     "debts": "Қарзҳо",
+    "branches": "Филиалҳо",
     "calculator": "Калкулятор",
     "ratings": "Рейтингҳо",
     "analytics": "Таҳлилҳо",
@@ -370,7 +371,7 @@
       "month": "дар моҳ",
       "currentPlan": "Нақшаи ҷорӣ",
       "upgrade": "Нақшаро навсозӣ кунед",
-      "popular": "Бештарин популяр",
+      "popular": "популяр",
       "feature1": "Идоракунии 20 қарз",
       "feature2": "Ёдрасониҳои асосӣ",
       "feature3": "Дастгирии Telegram",

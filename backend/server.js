@@ -59,14 +59,14 @@ const checkExpiredSubscriptions = async () => {
 
     if (expiredUsers.length > 0) {
       console.log(`Found ${expiredUsers.length} expired subscriptions, downgrading to free...`);
-      
+
       for (const user of expiredUsers) {
         await User.findByIdAndUpdate(user._id, {
           subscriptionTier: 'free',
           subscriptionExpiresAt: null,
           subscriptionStartedAt: null
         });
-        
+
         console.log(`Downgraded user ${user.username} (${user._id}) from ${user.subscriptionTier} to free`);
       }
     }
@@ -207,7 +207,7 @@ const userSchema = new mongoose.Schema({
   },
   subscriptionTier: {
     type: String,
-    enum: ['free', 'standard', 'pro'],
+    enum: ['free', 'lite', 'standard', 'pro'],
     default: 'free'
   },
   subscriptionExpiresAt: {
@@ -232,6 +232,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  activeBranchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    default: null
+  },
   // Telegram integration fields
   telegramId: {
     type: String,
@@ -252,6 +257,12 @@ const userSchema = new mongoose.Schema({
   },
   lastTelegramModalShown: {
     type: Date
+  },
+  // Branch management fields
+  activeBranchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    default: null
   }
 }, {
   timestamps: true
@@ -291,6 +302,12 @@ const debtSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true,
+    index: true
+  },
+  branchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
     required: true,
     index: true
   },
@@ -337,6 +354,13 @@ const debtSchema = new mongoose.Schema({
     type: String,
     enum: ['UZS', 'USD', 'EUR', 'RUB', 'TJS'],
     default: 'UZS'
+  },
+  // Branch management field
+  branchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
   }
 }, {
   timestamps: true
@@ -346,6 +370,9 @@ const debtSchema = new mongoose.Schema({
 debtSchema.index({ userId: 1, status: 1 });
 debtSchema.index({ userId: 1, debtDate: 1 });
 debtSchema.index({ userId: 1, createdAt: -1 });
+// Branch-specific indexes
+debtSchema.index({ userId: 1, branchId: 1, status: 1 });
+debtSchema.index({ branchId: 1, debtDate: 1 });
 
 // Debt model (MongoDB ulangan bo'lsa)
 let Debt;
@@ -353,6 +380,107 @@ try {
   Debt = mongoose.model('Debt', debtSchema);
 } catch (error) {
   Debt = mongoose.model('Debt');
+}
+
+// Branch Schema (MongoDB ulangan bo'lsa)
+const branchSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
+  currency: {
+    type: String,
+    enum: ['UZS', 'USD', 'EUR', 'RUB', 'TJS'],
+    default: 'UZS'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  color: {
+    type: String,
+    default: '#3B82F6' // Default blue color
+  },
+  icon: {
+    type: String,
+    default: 'building' // Default icon
+  }
+}, {
+  timestamps: true
+});
+
+// Branch indekslar
+branchSchema.index({ userId: 1, isActive: 1 });
+branchSchema.index({ userId: 1, name: 1 }, { unique: true });
+
+// Branch model (MongoDB ulangan bo'lsa)
+let Branch;
+try {
+  Branch = mongoose.model('Branch', branchSchema);
+} catch (error) {
+  Branch = mongoose.model('Branch');
+}
+
+// BranchSettings Schema (MongoDB ulangan bo'lsa)
+const branchSettingsSchema = new mongoose.Schema({
+  branchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    unique: true
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  currency: {
+    type: String,
+    enum: ['UZS', 'USD', 'EUR', 'RUB', 'TJS'],
+    default: 'UZS'
+  },
+  telegramNotifications: {
+    enabled: { type: Boolean, default: true },
+    dailyReports: { type: Boolean, default: true },
+    debtReminders: { type: Boolean, default: true }
+  },
+  reminderSettings: {
+    enabled: { type: Boolean, default: true },
+    daysBefore: { type: Number, default: 1 },
+    frequency: { type: String, enum: ['daily', 'weekly'], default: 'daily' }
+  },
+  customTemplates: [{
+    name: String,
+    template: String,
+    isDefault: { type: Boolean, default: false }
+  }]
+}, {
+  timestamps: true
+});
+
+// BranchSettings indekslar
+branchSettingsSchema.index({ branchId: 1 });
+branchSettingsSchema.index({ userId: 1 });
+
+// BranchSettings model (MongoDB ulangan bo'lsa)
+let BranchSettings;
+try {
+  BranchSettings = mongoose.model('BranchSettings', branchSettingsSchema);
+} catch (error) {
+  BranchSettings = mongoose.model('BranchSettings');
 }
 
 // Debt History Schema (MongoDB ulangan bo'lsa)
@@ -607,6 +735,14 @@ try {
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'qarzdaftar_jwt_secret_key';
 
+// Branch limits by subscription tier
+const BRANCH_LIMITS = {
+  free: 1,
+  lite: 2,
+  standard: 3,
+  pro: 5
+};
+
 // Initialize Telegram Bot
 const initializeTelegramBot = async () => {
   if (!TELEGRAM_BOT_TOKEN) {
@@ -636,13 +772,13 @@ const initializeTelegramBot = async () => {
       Debt,
       DebtHistory
     };
-    
+
     const useWebhook = process.env.TELEGRAM_USE_WEBHOOK === 'true';
     telegramBotHandler = new TelegramBotHandler(TELEGRAM_BOT_TOKEN, models, useWebhook);
     console.log('✅ Telegram bot handler initialized successfully');
     console.log(`🤖 Bot username: @${process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot'}`);
     console.log(`📡 Mode: ${useWebhook ? 'Webhook' : 'Polling'}`);
-    
+
     // Initialize Daily Report Service
     dailyReportService = new DailyReportService(models, telegramBotHandler);
     console.log('✅ Daily report service initialized successfully');
@@ -664,7 +800,7 @@ const setupDatabaseIndexes = async () => {
         if (error.code !== 86) throw error;
         console.log('TelegramId index already exists');
       }
-      
+
       // TelegramSession collection indexes
       try {
         await TelegramSession.collection.createIndex({ userId: 1 });
@@ -677,17 +813,39 @@ const setupDatabaseIndexes = async () => {
         if (error.code !== 86) throw error;
         console.log('TelegramSession indexes already exist');
       }
-      
+
       // Debt collection indexes (if not already exist)
       try {
         await Debt.collection.createIndex({ userId: 1, status: 1 });
         await Debt.collection.createIndex({ userId: 1, debtDate: 1 });
+        await Debt.collection.createIndex({ userId: 1, branchId: 1, status: 1 });
+        await Debt.collection.createIndex({ branchId: 1, debtDate: 1 });
         console.log('Debt indexes created');
       } catch (error) {
         if (error.code !== 86) throw error;
         console.log('Debt indexes already exist');
       }
-      
+
+      // Branch collection indexes
+      try {
+        await Branch.collection.createIndex({ userId: 1, isActive: 1 });
+        await Branch.collection.createIndex({ userId: 1, name: 1 }, { unique: true });
+        console.log('Branch indexes created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('Branch indexes already exist');
+      }
+
+      // BranchSettings collection indexes
+      try {
+        await BranchSettings.collection.createIndex({ branchId: 1 });
+        await BranchSettings.collection.createIndex({ userId: 1 });
+        console.log('BranchSettings indexes created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('BranchSettings indexes already exist');
+      }
+
       console.log('Database indexes setup completed successfully');
     }
   } catch (error) {
@@ -740,14 +898,65 @@ const formatUzbekDate = (date) => {
     'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
     'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'
   ];
-  
+
   const year = date.getFullYear();
   const month = months[date.getMonth()];
   const day = date.getDate();
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  
+
   return `${year}-yil ${day}-${month} ${hours}:${minutes}`;
+};
+
+// Branch limit validation middleware
+const validateBranchLimit = async (req, res, next) => {
+  // MongoDB ulanmagan bo'lsa o'tkazib yuborish
+  if (!mongoose.connection.readyState) {
+    return next();
+  }
+
+  try {
+    // Get user to check subscription tier
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check current branch count
+    const currentBranchCount = await Branch.countDocuments({
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    const branchLimit = BRANCH_LIMITS[user.subscriptionTier] || 1;
+
+    if (currentBranchCount >= branchLimit) {
+      return res.status(403).json({
+        success: false,
+        message: 'Branch limit exceeded for your subscription tier',
+        currentCount: currentBranchCount,
+        limit: branchLimit,
+        tier: user.subscriptionTier,
+        upgradeRequired: true
+      });
+    }
+
+    // Add user and limits to request for use in endpoint
+    req.branchUser = user;
+    req.branchLimit = branchLimit;
+    req.currentBranchCount = currentBranchCount;
+
+    next();
+  } catch (error) {
+    console.error('Branch limit validation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error validating branch limits'
+    });
+  }
 };
 
 // Foydalanuvchi autentifikatsiya qilinganligini tekshirish
@@ -1093,14 +1302,14 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.userId).select('-password');
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     res.json({
       success: true,
       user: {
@@ -1126,7 +1335,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 // Salomatlik tekshiruvi
 app.get('/api/health', (req, res) => {
   const botStatus = telegramBotHandler ? telegramBotHandler.getBotStatus() : null;
-  
+
   res.json({
     success: true,
     message: 'Backend server is running',
@@ -1150,7 +1359,7 @@ app.get('/api/telegram/status', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user) {
       return res.json({
         success: true,
@@ -1160,7 +1369,7 @@ app.get('/api/telegram/status', authenticateToken, async (req, res) => {
         connectedAt: null
       });
     }
-    
+
     res.json({
       success: true,
       connected: !!user.telegramId,
@@ -1191,7 +1400,7 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
 
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -1201,10 +1410,10 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
 
     // Connection token yaratish (username yoki user ID)
     let connectionToken = user.username || user._id.toString();
-    
+
     // Bo'sh joylarni pastgi chiziq bilan almashtirish (URL-safe qilish uchun)
     connectionToken = connectionToken.replace(/\s+/g, '_');
-    
+
     const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot';
     const telegramUrl = `https://t.me/${botUsername}?start=${connectionToken}`;
 
@@ -1218,7 +1427,7 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
     });
   } catch (error) {
     console.error('Generate token error:', error);
-    
+
     // MongoDB CastError (invalid ObjectId)
     if (error.name === 'CastError') {
       return res.status(400).json({
@@ -1226,7 +1435,7 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
         message: 'Invalid user ID format'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Server error generating token'
@@ -1246,7 +1455,7 @@ app.post('/api/telegram/disconnect', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.userId);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -1615,17 +1824,33 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
   try {
     const { amount, phone, countryCode, description, reason } = req.body;
 
-    // Avvalgi qarzni olish
+    // Avvalgi qarzni olish va branch ownership tekshirish
     const existingDebt = await Debt.findOne({
       _id: req.params.id,
       userId: req.user.userId
-    });
+    }).populate('branchId');
 
     if (!existingDebt) {
       return res.status(404).json({
         success: false,
         message: 'Debt not found'
       });
+    }
+
+    // Verify branch ownership if debt has branchId
+    if (existingDebt.branchId) {
+      const branch = await Branch.findOne({
+        _id: existingDebt.branchId,
+        userId: req.user.userId,
+        isActive: true
+      });
+
+      if (!branch) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Branch not found or inactive'
+        });
+      }
     }
 
     // Yangilash obyektini yaratish
@@ -1717,17 +1942,33 @@ app.delete('/api/debts/:id', authenticateToken, async (req, res) => {
   try {
     const { reason } = req.body; // Get reason from request body
 
-    // Avvalgi qarzni olish
+    // Avvalgi qarzni olish va branch ownership tekshirish
     const existingDebt = await Debt.findOne({
       _id: req.params.id,
       userId: req.user.userId
-    });
+    }).populate('branchId');
 
     if (!existingDebt) {
       return res.status(404).json({
         success: false,
         message: 'Debt not found'
       });
+    }
+
+    // Verify branch ownership if debt has branchId
+    if (existingDebt.branchId) {
+      const branch = await Branch.findOne({
+        _id: existingDebt.branchId,
+        userId: req.user.userId,
+        isActive: true
+      });
+
+      if (!branch) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Branch not found or inactive'
+        });
+      }
     }
 
     // Create debt history record before deleting
@@ -2318,7 +2559,7 @@ app.put('/api/admin/users/:id/status', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Admin update user status error:', error);
-    
+
     // MongoDB validation error
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -2358,10 +2599,10 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
       });
     }
 
-    if (!['free', 'standard', 'pro'].includes(subscription)) {
+    if (!['free', 'lite', 'standard', 'pro'].includes(subscription)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid subscription. Must be "free", "standard", or "pro"'
+        message: 'Invalid subscription. Must be "free", "lite", "standard", or "pro"'
       });
     }
 
@@ -2376,7 +2617,7 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
     // Calculate expiration date
     let subscriptionExpiresAt = null;
     let subscriptionStartedAt = null;
-    
+
     if (subscription !== 'free') {
       const days = expirationDays || 30; // Default to 30 days
       subscriptionStartedAt = new Date();
@@ -2441,7 +2682,7 @@ app.put('/api/admin/users/:id/subscription', authenticateAdmin, async (req, res)
     });
   } catch (error) {
     console.error('Admin update user subscription error:', error);
-    
+
     // MongoDB validation error
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -2534,7 +2775,7 @@ app.delete('/api/admin/users/:id', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Delete user error:', error);
-    
+
     // MongoDB CastError (invalid ObjectId)
     if (error.name === 'CastError') {
       return res.status(400).json({
@@ -2546,6 +2787,346 @@ app.delete('/api/admin/users/:id', authenticateAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error deleting user'
+    });
+  }
+});
+
+// Get User Profile Details for Admin
+app.get('/api/admin/users/:id/profile', authenticateAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // MongoDB ulanmagan bo'lsa test javob qaytarish
+    if (!mongoose.connection.readyState) {
+      return res.json({
+        success: true,
+        profile: {
+          user: {
+            id: userId,
+            username: 'testuser',
+            phone: '+998901234567',
+            subscriptionTier: 'free',
+            role: 'user',
+            status: 'active',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          stats: {
+            totalDebts: 15,
+            pendingDebts: 8,
+            paidDebts: 7,
+            totalAmount: 2500000,
+            pendingAmount: 1200000,
+            paidAmount: 1300000,
+            dueTodayCount: 2,
+            dueTomorrowCount: 1,
+            overdueCount: 3
+          },
+          dueToday: [
+            { creditor: 'Ali Valiyev', amount: 500000, currency: 'UZS' },
+            { creditor: 'Bobur Karimov', amount: 300000, currency: 'UZS' }
+          ],
+          dueTomorrow: [
+            { creditor: 'Sardor Toshev', amount: 400000, currency: 'UZS' }
+          ],
+          overdue: [
+            { creditor: 'Jasur Rahimov', amount: 200000, currency: 'UZS', daysOverdue: 3 },
+            { creditor: 'Nodir Salimov', amount: 150000, currency: 'UZS', daysOverdue: 5 },
+            { creditor: 'Otabek Nazarov', amount: 250000, currency: 'UZS', daysOverdue: 1 }
+          ]
+        }
+      });
+    }
+
+    // Validate userId
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    // Get user details
+    const user = await User.findById(userId).select('-password');
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get user's debts
+    const debts = await Debt.find({ userId: userId });
+
+    // Calculate statistics
+    const pendingDebts = debts.filter(debt => debt.status === 'pending');
+    const paidDebts = debts.filter(debt => debt.status === 'paid');
+
+    const totalAmount = debts.reduce((sum, debt) => sum + debt.amount, 0);
+    const pendingAmount = pendingDebts.reduce((sum, debt) => sum + debt.amount, 0);
+    const paidAmount = paidDebts.reduce((sum, debt) => sum + debt.amount, 0);
+
+    // Get today's date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Get tomorrow's date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    // Filter debts by due dates
+    const dueToday = pendingDebts.filter(debt => {
+      const debtDate = new Date(debt.debtDate).toISOString().split('T')[0];
+      return debtDate === todayStr;
+    });
+
+    const dueTomorrow = pendingDebts.filter(debt => {
+      const debtDate = new Date(debt.debtDate).toISOString().split('T')[0];
+      return debtDate === tomorrowStr;
+    });
+
+    const overdue = pendingDebts.filter(debt => {
+      const debtDate = new Date(debt.debtDate).toISOString().split('T')[0];
+      return debtDate < todayStr;
+    }).map(debt => {
+      const debtDate = new Date(debt.debtDate);
+      const diffTime = today - debtDate;
+      const daysOverdue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return {
+        creditor: debt.creditor,
+        amount: debt.amount,
+        currency: debt.currency,
+        daysOverdue: daysOverdue,
+        debtDate: debt.debtDate,
+        description: debt.description
+      };
+    });
+
+    // Prepare response data
+    const profileData = {
+      user: {
+        id: user._id,
+        username: user.username,
+        phone: user.phone,
+        subscriptionTier: user.subscriptionTier,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+        subscriptionStartedAt: user.subscriptionStartedAt,
+        role: user.role,
+        status: user.status,
+        avatarColor: user.avatarColor,
+        telegramId: user.telegramId,
+        telegramUsername: user.telegramUsername,
+        telegramConnectedAt: user.telegramConnectedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      },
+      stats: {
+        totalDebts: debts.length,
+        pendingDebts: pendingDebts.length,
+        paidDebts: paidDebts.length,
+        totalAmount: totalAmount,
+        pendingAmount: pendingAmount,
+        paidAmount: paidAmount,
+        dueTodayCount: dueToday.length,
+        dueTomorrowCount: dueTomorrow.length,
+        overdueCount: overdue.length
+      },
+      dueToday: dueToday.map(debt => ({
+        creditor: debt.creditor,
+        amount: debt.amount,
+        currency: debt.currency,
+        description: debt.description,
+        debtDate: debt.debtDate
+      })),
+      dueTomorrow: dueTomorrow.map(debt => ({
+        creditor: debt.creditor,
+        amount: debt.amount,
+        currency: debt.currency,
+        description: debt.description,
+        debtDate: debt.debtDate
+      })),
+      overdue: overdue
+    };
+
+    res.json({
+      success: true,
+      profile: profileData
+    });
+
+  } catch (error) {
+    console.error('Get user profile error:', error);
+
+    // MongoDB CastError (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching user profile'
+    });
+  }
+});
+
+// Send Report to User via Telegram
+app.post('/api/admin/users/:id/send-report', authenticateAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // MongoDB ulanmagan bo'lsa test javob qaytarish
+    if (!mongoose.connection.readyState) {
+      return res.json({
+        success: true,
+        message: 'Hisobot yuborildi (test mode)'
+      });
+    }
+
+    // Validate userId
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    // Get user details
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if user has Telegram connected
+    if (!user.telegramId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Foydalanuvchi Telegram botga ulanmagan'
+      });
+    }
+
+    // Get user's debts
+    const debts = await Debt.find({ userId: userId, status: 'pending' });
+
+    // Get tomorrow's date
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    // Filter debts due tomorrow
+    const dueTomorrow = debts.filter(debt => {
+      const debtDate = new Date(debt.debtDate).toISOString().split('T')[0];
+      return debtDate === tomorrowStr;
+    });
+
+    if (dueTomorrow.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ertaga to\'lanishi kerak bo\'lgan qarzlar yo\'q'
+      });
+    }
+
+    // Prepare report message
+    const formatCurrency = (amount, currency = 'UZS') => {
+      return new Intl.NumberFormat('uz-UZ').format(amount) + ' ' + currency;
+    };
+
+    const formatDate = (date) => {
+      return new Date(date).toLocaleDateString('uz-UZ', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
+
+    let reportMessage = `📊 <b>ERTAGA TO'LANISHI KERAK BO'LGAN QARZLAR HISOBOTI</b>\n\n`;
+    reportMessage += `👤 <b>Foydalanuvchi:</b> ${user.username}\n`;
+    reportMessage += `📅 <b>Sana:</b> ${formatDate(tomorrow)}\n`;
+    reportMessage += `📋 <b>Jami qarzlar:</b> ${dueTomorrow.length} ta\n\n`;
+
+    let totalAmount = 0;
+    dueTomorrow.forEach((debt, index) => {
+      totalAmount += debt.amount;
+      reportMessage += `${index + 1}. <b>${debt.creditor}</b>\n`;
+      reportMessage += `   💰 ${formatCurrency(debt.amount, debt.currency)}\n`;
+      if (debt.description) {
+        reportMessage += `   📝 ${debt.description}\n`;
+      }
+      if (debt.phone) {
+        reportMessage += `   📞 ${debt.phone}\n`;
+      }
+      reportMessage += `\n`;
+    });
+
+    reportMessage += `💵 <b>JAMI SUMMA:</b> ${formatCurrency(totalAmount)}`;
+
+    // Send via Telegram bot if available
+    if (telegramBotHandler && user.telegramId) {
+      try {
+        await telegramBotHandler.sendMessage(user.telegramId, reportMessage);
+
+        // Also send Excel file if there are debts
+        if (dueTomorrow.length > 0) {
+          // Create simple CSV content (Excel alternative)
+          let csvContent = 'Qarzdor,Summa,Valyuta,Tavsif,Telefon,Muddat\n';
+          dueTomorrow.forEach(debt => {
+            const row = [
+              debt.creditor,
+              debt.amount,
+              debt.currency,
+              debt.description || '',
+              debt.phone || '',
+              formatDate(debt.debtDate)
+            ].map(field => `"${field}"`).join(',');
+            csvContent += row + '\n';
+          });
+
+          // Send as document
+          await telegramBotHandler.sendDocument(user.telegramId, {
+            filename: `qarzlar_hisoboti_${tomorrow.toISOString().split('T')[0]}.csv`,
+            content: Buffer.from(csvContent, 'utf8')
+          }, `📊 Ertaga to'lanishi kerak bo'lgan qarzlar Excel fayli`);
+        }
+
+        console.log(`Report sent to user ${user.username} (${user.telegramId})`);
+      } catch (telegramError) {
+        console.error('Error sending Telegram report:', telegramError);
+        return res.status(500).json({
+          success: false,
+          message: 'Telegram orqali yuborishda xatolik yuz berdi'
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Hisobot ${user.username} ga Telegram orqali yuborildi`,
+      reportData: {
+        totalDebts: dueTomorrow.length,
+        totalAmount: totalAmount,
+        dueDate: formatDate(tomorrow)
+      }
+    });
+
+  } catch (error) {
+    console.error('Send report error:', error);
+
+    // MongoDB CastError (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error sending report'
     });
   }
 });
@@ -2738,7 +3319,7 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
 
   try {
     const { range = '30d' } = req.query;
-    
+
     // Admin huquqini tekshirish
     if (req.user.role !== 'admin') {
       return res.status(403).json({
@@ -2750,7 +3331,7 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
     // Sana oralig'ini hisoblash
     const now = new Date();
     let startDate = new Date();
-    
+
     switch (range) {
       case '7d':
         startDate.setDate(now.getDate() - 7);
@@ -2783,7 +3364,7 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
       plans: subscriptionStats.map(stat => {
         const tierNames = {
           'free': 'Bepul',
-          'standard': 'Standart', 
+          'standard': 'Standart',
           'pro': 'Professional'
         };
         return {
@@ -2810,12 +3391,12 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
 
     const previousPeriodStart = new Date(startDate);
     previousPeriodStart.setTime(previousPeriodStart.getTime() - (now.getTime() - startDate.getTime()));
-    
+
     const previousNewUsers = await User.countDocuments({
       createdAt: { $gte: previousPeriodStart, $lt: startDate }
     });
 
-    const userGrowth = previousNewUsers > 0 
+    const userGrowth = previousNewUsers > 0
       ? Math.round(((newUsersCount - previousNewUsers) / previousNewUsers) * 100)
       : 100;
 
@@ -2828,7 +3409,7 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
       createdAt: { $gte: previousPeriodStart, $lt: startDate }
     });
 
-    const debtGrowth = previousDebts > 0 
+    const debtGrowth = previousDebts > 0
       ? Math.round(((totalDebts - previousDebts) / previousDebts) * 100)
       : 100;
 
@@ -2865,8 +3446,8 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
 
     const currentRevenue = paidDebtsAmount[0]?.total || 0;
     const previousRevenue = previousPaidAmount[0]?.total || 0;
-    
-    const revenueGrowth = previousRevenue > 0 
+
+    const revenueGrowth = previousRevenue > 0
       ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)
       : 100;
 
@@ -2903,22 +3484,22 @@ app.use('/api/debts', debtRoutes);
 app.post('/api/telegram/webhook', async (req, res) => {
   try {
     console.log('Telegram webhook received:', JSON.stringify(req.body, null, 2));
-    
+
     const update = req.body;
-    
+
     if (update.message) {
       const message = update.message;
       const chatId = message.chat.id;
       const text = message.text;
-      
+
       console.log(`Message from ${message.from.username || message.from.first_name}: ${text}`);
-      
+
       // Handle the message using TelegramBotHandler
       if (global.telegramBotHandler) {
         await global.telegramBotHandler.handleUpdate(update);
       }
     }
-    
+
     res.status(200).json({ ok: true });
   } catch (error) {
     console.error('Webhook error:', error);
@@ -2930,19 +3511,19 @@ app.post('/api/telegram/webhook', async (req, res) => {
 app.post('/api/telegram/set-webhook', async (req, res) => {
   try {
     const { url } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
-    
+
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    
+
     if (!TELEGRAM_BOT_TOKEN) {
       return res.status(400).json({ error: 'Telegram bot token not configured' });
     }
-    
+
     const webhookUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook`;
-    
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
@@ -2952,9 +3533,9 @@ app.post('/api/telegram/set-webhook', async (req, res) => {
         url: url
       })
     });
-    
+
     const result = await response.json();
-    
+
     res.json(result);
   } catch (error) {
     console.error('Set webhook error:', error);
@@ -2966,20 +3547,767 @@ app.post('/api/telegram/set-webhook', async (req, res) => {
 app.get('/api/telegram/webhook-info', async (req, res) => {
   try {
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    
+
     if (!TELEGRAM_BOT_TOKEN) {
       return res.status(400).json({ error: 'Telegram bot token not configured' });
     }
-    
+
     const webhookUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo`;
-    
+
     const response = await fetch(webhookUrl);
     const result = await response.json();
-    
+
     res.json(result);
   } catch (error) {
     console.error('Get webhook info error:', error);
     res.status(500).json({ error: 'Failed to get webhook info' });
+  }
+});
+
+// ==================== BRANCH MANAGEMENT ENDPOINTS ====================
+
+// Get user branches
+app.get('/api/branches', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      branches: [
+        {
+          _id: 'default-branch-id',
+          name: 'Asosiy filial',
+          description: 'Default branch for test mode',
+          currency: 'UZS',
+          isActive: true,
+          color: '#3B82F6',
+          icon: 'building',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ]
+    });
+  }
+
+  try {
+    const branches = await Branch.find({
+      userId: req.user.userId,
+      isActive: true
+    }).sort({ createdAt: 1 });
+
+    res.json({
+      success: true,
+      branches
+    });
+  } catch (error) {
+    console.error('Get branches error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching branches'
+    });
+  }
+});
+
+// Create new branch
+app.post('/api/branches', authenticateToken, validateBranchLimit, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.status(201).json({
+      success: true,
+      message: 'Branch created successfully (test mode)',
+      branch: {
+        _id: 'new-branch-id',
+        name: req.body.name || 'Yangi filial',
+        description: req.body.description || '',
+        currency: req.body.currency || 'UZS',
+        isActive: true,
+        color: req.body.color || '#3B82F6',
+        icon: req.body.icon || 'building',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  try {
+    const { name, description, currency, color, icon } = req.body;
+
+    // Validation
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Branch name is required'
+      });
+    }
+
+    // User and limits are provided by validateBranchLimit middleware
+    const user = req.branchUser;
+    const currentBranchCount = req.currentBranchCount;
+
+    // Check if branch name already exists for this user
+    const existingBranch = await Branch.findOne({
+      userId: req.user.userId,
+      name: name.trim(),
+      isActive: true
+    });
+
+    if (existingBranch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Branch with this name already exists'
+      });
+    }
+
+    // Create new branch
+    const branch = new Branch({
+      userId: req.user.userId,
+      name: name.trim(),
+      description: description?.trim() || '',
+      currency: currency || 'UZS',
+      color: color || '#3B82F6',
+      icon: icon || 'building',
+      isActive: true
+    });
+
+    await branch.save();
+
+    // Create default settings for the branch
+    const branchSettings = new BranchSettings({
+      branchId: branch._id,
+      userId: req.user.userId,
+      currency: currency || 'UZS'
+    });
+
+    await branchSettings.save();
+
+    // If this is the user's first branch, set it as active
+    if (currentBranchCount === 0) {
+      await User.findByIdAndUpdate(req.user.userId, {
+        activeBranchId: branch._id
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Branch created successfully',
+      branch
+    });
+  } catch (error) {
+    console.error('Create branch error:', error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Branch with this name already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating branch'
+    });
+  }
+});
+
+// Update branch
+app.put('/api/branches/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Branch updated successfully (test mode)',
+      branch: {
+        _id: req.params.id,
+        name: req.body.name || 'Updated branch',
+        description: req.body.description || '',
+        currency: req.body.currency || 'UZS',
+        isActive: true,
+        color: req.body.color || '#3B82F6',
+        icon: req.body.icon || 'building',
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  try {
+    const { name, description, currency, color, icon } = req.body;
+    const branchId = req.params.id;
+
+    // Validation
+    if (!name || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Branch name is required'
+      });
+    }
+
+    // Find branch and verify ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Check if new name conflicts with existing branches (excluding current)
+    if (name.trim() !== branch.name) {
+      const existingBranch = await Branch.findOne({
+        userId: req.user.userId,
+        name: name.trim(),
+        isActive: true,
+        _id: { $ne: branchId }
+      });
+
+      if (existingBranch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Branch with this name already exists'
+        });
+      }
+    }
+
+    // Update branch
+    const updatedBranch = await Branch.findByIdAndUpdate(
+      branchId,
+      {
+        name: name.trim(),
+        description: description?.trim() || '',
+        currency: currency || branch.currency,
+        color: color || branch.color,
+        icon: icon || branch.icon
+      },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Branch updated successfully',
+      branch: updatedBranch
+    });
+  } catch (error) {
+    console.error('Update branch error:', error);
+
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Branch with this name already exists'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating branch'
+    });
+  }
+});
+
+// Delete branch
+app.delete('/api/branches/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Branch deleted successfully (test mode)'
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+    const { forceDelete } = req.query; // Query parameter to force delete with debts
+
+    // Find branch and verify ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Check if branch has debts
+    const debtCount = await Debt.countDocuments({
+      branchId: branchId
+    });
+
+    // If there are debts and forceDelete is not specified, return error
+    if (debtCount > 0 && forceDelete !== 'true') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete branch with pending debts',
+        debtCount
+      });
+    }
+
+    // Check if this is the user's active branch
+    const user = await User.findById(req.user.userId);
+    const isActiveBranch = user.activeBranchId && user.activeBranchId.toString() === branchId;
+
+    // If forceDelete is true, delete all debts in this branch
+    if (forceDelete === 'true' && debtCount > 0) {
+      await Debt.deleteMany({
+        branchId: branchId
+      });
+    }
+
+    // Soft delete the branch
+    await Branch.findByIdAndUpdate(branchId, {
+      isActive: false
+    });
+
+    // Delete branch settings
+    await BranchSettings.findOneAndDelete({
+      branchId: branchId
+    });
+
+    // If this was the active branch, set another branch as active
+    if (isActiveBranch) {
+      const remainingBranch = await Branch.findOne({
+        userId: req.user.userId,
+        isActive: true
+      });
+
+      await User.findByIdAndUpdate(req.user.userId, {
+        activeBranchId: remainingBranch ? remainingBranch._id : null
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Branch deleted successfully',
+      deletedDebts: forceDelete === 'true' ? debtCount : 0
+    });
+  } catch (error) {
+    console.error('Delete branch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting branch'
+    });
+  }
+});
+
+// Get branch debt count
+app.get('/api/branches/:id/debts/count', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      count: 0
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+
+    // Find branch and verify ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Count debts in this branch
+    const debtCount = await Debt.countDocuments({
+      branchId: branchId
+    });
+
+    res.json({
+      success: true,
+      count: debtCount
+    });
+  } catch (error) {
+    console.error('Get branch debt count error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error getting debt count'
+    });
+  }
+});
+
+// Get branch statistics
+app.get('/api/branches/:id/stats', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      stats: {
+        totalDebts: 5,
+        pendingDebts: 3,
+        paidDebts: 2,
+        totalAmount: 1500000,
+        pendingAmount: 900000,
+        paidAmount: 600000,
+        currency: 'UZS'
+      }
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Calculate statistics
+    const [totalStats, pendingStats, paidStats] = await Promise.all([
+      Debt.aggregate([
+        { $match: { branchId: new mongoose.Types.ObjectId(branchId) } },
+        { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$amount' } } }
+      ]),
+      Debt.aggregate([
+        { $match: { branchId: new mongoose.Types.ObjectId(branchId), status: 'pending' } },
+        { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$amount' } } }
+      ]),
+      Debt.aggregate([
+        { $match: { branchId: new mongoose.Types.ObjectId(branchId), status: 'paid' } },
+        { $group: { _id: null, count: { $sum: 1 }, total: { $sum: '$amount' } } }
+      ])
+    ]);
+
+    const stats = {
+      totalDebts: totalStats[0]?.count || 0,
+      pendingDebts: pendingStats[0]?.count || 0,
+      paidDebts: paidStats[0]?.count || 0,
+      totalAmount: totalStats[0]?.total || 0,
+      pendingAmount: pendingStats[0]?.total || 0,
+      paidAmount: paidStats[0]?.total || 0,
+      currency: branch.currency
+    };
+
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (error) {
+    console.error('Get branch stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching branch statistics'
+    });
+  }
+});
+
+// ==================== BRANCH SETTINGS ENDPOINTS ====================
+
+// Get branch settings
+app.get('/api/branches/:id/settings', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      settings: {
+        currency: 'UZS',
+        telegramNotifications: {
+          enabled: true,
+          dailyReports: true,
+          debtReminders: true
+        },
+        reminderSettings: {
+          enabled: true,
+          daysBefore: 1,
+          frequency: 'daily'
+        },
+        customTemplates: []
+      }
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Get or create branch settings
+    let settings = await BranchSettings.findOne({ branchId: branchId });
+
+    if (!settings) {
+      // Create default settings if not exists
+      settings = new BranchSettings({
+        branchId: branchId,
+        userId: req.user.userId,
+        currency: branch.currency || 'UZS'
+      });
+      await settings.save();
+    }
+
+    res.json({
+      success: true,
+      settings
+    });
+  } catch (error) {
+    console.error('Get branch settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching branch settings'
+    });
+  }
+});
+
+// Update branch settings
+app.put('/api/branches/:id/settings', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Branch settings updated successfully (test mode)',
+      settings: {
+        ...req.body,
+        updatedAt: new Date()
+      }
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+    const {
+      currency,
+      telegramNotifications,
+      reminderSettings,
+      customTemplates
+    } = req.body;
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Prepare update object
+    const updateData = {};
+    if (currency) updateData.currency = currency;
+    if (telegramNotifications) updateData.telegramNotifications = telegramNotifications;
+    if (reminderSettings) updateData.reminderSettings = reminderSettings;
+    if (customTemplates) updateData.customTemplates = customTemplates;
+
+    // Update or create settings
+    const settings = await BranchSettings.findOneAndUpdate(
+      { branchId: branchId },
+      updateData,
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true
+      }
+    );
+
+    // If currency is updated, also update the branch currency
+    if (currency && currency !== branch.currency) {
+      await Branch.findByIdAndUpdate(branchId, { currency });
+    }
+
+    res.json({
+      success: true,
+      message: 'Branch settings updated successfully',
+      settings
+    });
+  } catch (error) {
+    console.error('Update branch settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating branch settings'
+    });
+  }
+});
+
+// ==================== BRANCH-SPECIFIC DEBT ENDPOINTS ====================
+
+// Get debts for specific branch
+app.get('/api/branches/:id/debts', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      debts: [
+        {
+          _id: 'test-debt-1',
+          creditor: 'Test Creditor',
+          amount: 500000,
+          description: 'Test debt for branch',
+          status: 'pending',
+          debtDate: new Date(),
+          currency: 'UZS',
+          branchId: req.params.id
+        }
+      ]
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Get debts for this branch
+    const debts = await Debt.find({
+      branchId: branchId,
+      userId: req.user.userId
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      debts
+    });
+  } catch (error) {
+    console.error('Get branch debts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching branch debts'
+    });
+  }
+});
+
+// Create debt for specific branch
+app.post('/api/branches/:id/debts', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.status(201).json({
+      success: true,
+      message: 'Debt created successfully for branch (test mode)',
+      debt: {
+        _id: 'new-debt-id',
+        creditor: req.body.creditor || 'Test Creditor',
+        amount: req.body.amount || 100000,
+        description: req.body.description || '',
+        status: 'pending',
+        debtDate: req.body.debtDate || new Date(),
+        currency: req.body.currency || 'UZS',
+        branchId: req.params.id
+      }
+    });
+  }
+
+  try {
+    const branchId = req.params.id;
+    const { creditor, amount, description, phone, countryCode, debtDate, currency } = req.body;
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Validation
+    if (!creditor || !amount || !debtDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Creditor, amount, and debt date are required'
+      });
+    }
+
+    if (amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be greater than 0'
+      });
+    }
+
+    // Create new debt
+    const debt = new Debt({
+      userId: req.user.userId,
+      branchId: branchId,
+      creditor: creditor.trim(),
+      amount: parseFloat(amount),
+      description: description?.trim() || '',
+      phone: phone?.trim() || '',
+      countryCode: countryCode || '+998',
+      debtDate: new Date(debtDate),
+      currency: currency || branch.currency || 'UZS',
+      status: 'pending'
+    });
+
+    await debt.save();
+
+    // Create debt history record
+    const debtHistory = new DebtHistory({
+      userId: req.user.userId,
+      debtId: debt._id,
+      action: 'created',
+      amount: debt.amount,
+      creditor: debt.creditor,
+      description: debt.description,
+      status: debt.status
+    });
+
+    await debtHistory.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Debt created successfully for branch',
+      debt
+    });
+  } catch (error) {
+    console.error('Create branch debt error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error creating debt for branch'
+    });
   }
 });
 
