@@ -1411,8 +1411,22 @@ app.post('/api/telegram/generate-token', authenticateToken, async (req, res) => 
     // Connection token yaratish (username yoki user ID)
     let connectionToken = user.username || user._id.toString();
 
-    // Bo'sh joylarni pastgi chiziq bilan almashtirish (URL-safe qilish uchun)
-    connectionToken = connectionToken.replace(/\s+/g, '_');
+    // URL-safe token yaratish
+    const createUrlSafeToken = (str) => {
+      return str
+        // Avval apostrof belgilarini o'rta chiziq bilan almashtirish
+        .replace(/'/g, "-")  // Curved apostrophe to dash
+        .replace(/'/g, "-")  // Left single quotation mark to dash
+        .replace(/'/g, "-")  // Right single quotation mark to dash
+        .replace(/`/g, "-")  // Backtick to dash
+        .replace(/´/g, "-")  // Acute accent to dash
+        .replace(/ʻ/g, "-")  // Modifier letter turned comma to dash
+        .replace(/ʼ/g, "-")  // Modifier letter apostrophe to dash
+        // Keyin bo'sh joylarni pastgi chiziq bilan almashtirish
+        .replace(/\s+/g, '_');
+    };
+
+    connectionToken = createUrlSafeToken(connectionToken);
 
     const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'qarzdaftarchabot';
     const telegramUrl = `https://t.me/${botUsername}?start=${connectionToken}`;

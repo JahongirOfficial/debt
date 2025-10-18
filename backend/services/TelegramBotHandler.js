@@ -92,7 +92,23 @@ class TelegramBotHandler {
       // Skip non-text messages
       if (!msg.text) return;
 
-      const text = msg.text.trim();
+      // Matnni normalizatsiya qilish - apostrof belgilarini o'rta chiziq bilan almashtirish
+      const normalizeText = (str) => {
+        return str
+          .replace(/'/g, "-")  // Curved apostrophe to dash
+          .replace(/'/g, "-")  // Left single quotation mark to dash
+          .replace(/'/g, "-")  // Right single quotation mark to dash
+          .replace(/`/g, "-")  // Backtick to dash
+          .replace(/´/g, "-")  // Acute accent to dash
+          .replace(/ʻ/g, "-")  // Modifier letter turned comma to dash
+          .replace(/ʼ/g, "-"); // Modifier letter apostrophe to dash
+      };
+
+      const originalText = msg.text.trim();
+      const normalizedText = normalizeText(originalText);
+      
+      // Agar matn o'zgargan bo'lsa, yangi matn bilan ishlash
+      const text = normalizedText;
 
       try {
         // Handle commands
@@ -113,6 +129,9 @@ class TelegramBotHandler {
           await this.handleAllDebts(msg);
         } else if (text.startsWith('/') && !this.isKnownCommand(text)) {
           await this.handleUnknownCommand(msg);
+        } else if (!text.startsWith('/')) {
+          // Oddiy matn - ehtimol username sifatida bog'lanish uchun
+          await this.handleTextAsUsername(msg, text);
         }
       } catch (error) {
         console.error(`Error handling message ${msg.message_id}:`, error);
@@ -155,6 +174,21 @@ class TelegramBotHandler {
       } catch (error) {
         console.log(`Failed to decode parameter, using original: "${parameter}"`);
       }
+      
+      // Parameter ni ham normalizatsiya qilish - apostrof belgilarini o'rta chiziq bilan almashtirish
+      const normalizeParameter = (str) => {
+        return str
+          .replace(/'/g, "-")  // Curved apostrophe to dash
+          .replace(/'/g, "-")  // Left single quotation mark to dash
+          .replace(/'/g, "-")  // Right single quotation mark to dash
+          .replace(/`/g, "-")  // Backtick to dash
+          .replace(/´/g, "-")  // Acute accent to dash
+          .replace(/ʻ/g, "-")  // Modifier letter turned comma to dash
+          .replace(/ʼ/g, "-"); // Modifier letter apostrophe to dash
+      };
+      
+      parameter = normalizeParameter(parameter);
+      console.log(`Normalized parameter: "${parameter}"`);
     }
 
     try {
@@ -191,17 +225,36 @@ class TelegramBotHandler {
       }
 
       // Token orqali foydalanuvchini topish va bog'lash
-      // Pastgi chiziqlarni bo'sh joy bilan almashtirish
       const originalToken = token;
-      const tokenWithSpaces = token.replace(/_/g, ' ');
+      
+      // Reverse transformation: URL-safe tokendan original formatga qaytarish
+      const reverseUrlSafeToken = (str) => {
+        // Avval o'rta chiziqlarni apostrof bilan almashtirish
+        const withApostrophes = str.replace(/-/g, "'");
+        // Keyin pastgi chiziqlarni bo'sh joy bilan almashtirish
+        const withSpaces = str.replace(/_/g, ' ');
+        // Ikkala o'zgarishni ham qo'llash
+        const withBoth = str.replace(/-/g, "'").replace(/_/g, ' ');
+        
+        return {
+          original: str,
+          withApostrophes: withApostrophes,
+          withSpaces: withSpaces,
+          withBoth: withBoth
+        };
+      };
 
-      // Token username yoki phone bo'lishi mumkin
+      const tokenVariants = reverseUrlSafeToken(originalToken);
+
+      // Token username yoki phone bo'lishi mumkin - barcha variantlarni tekshirish
       let searchQuery = {
         $or: [
-          { username: originalToken },
-          { username: tokenWithSpaces },
-          { phone: originalToken },
-          { phone: tokenWithSpaces }
+          { username: tokenVariants.original },
+          { username: tokenVariants.withApostrophes },
+          { username: tokenVariants.withSpaces },
+          { username: tokenVariants.withBoth },
+          { phone: tokenVariants.original },
+          { phone: tokenVariants.withSpaces }
         ]
       };
 
@@ -210,10 +263,12 @@ class TelegramBotHandler {
         searchQuery.$or.push({ _id: originalToken });
       }
 
-      // Case-insensitive qidiruv ham qo'shish
+      // Case-insensitive qidiruv ham qo'shish (barcha variantlar bilan)
       searchQuery.$or.push(
-        { username: { $regex: new RegExp(`^${originalToken.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
-        { username: { $regex: new RegExp(`^${tokenWithSpaces.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
+        { username: { $regex: new RegExp(`^${tokenVariants.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${tokenVariants.withApostrophes.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${tokenVariants.withSpaces.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+        { username: { $regex: new RegExp(`^${tokenVariants.withBoth.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
       );
 
       console.log(`Search query:`, JSON.stringify(searchQuery, null, 2));
@@ -998,6 +1053,25 @@ class TelegramBotHandler {
     } catch (error) {
       console.error('Error sending document:', error);
       throw error;
+    }
+  }
+
+  // Oddiy matn orqali username sifatida bog'lanish
+  async handleTextAsUsername(msg, text) {
+    const chatId = msg.chat.id;
+    const telegramId = msg.from.id.toString();
+    const username = msg.from.username || msg.from.first_name || 'Unknown';
+
+    try {
+      console.log(`Text message from ${username} (${telegramId}): "${text}"`);
+
+      // Matnni username sifatida qabul qilish
+      await this.handleConnectionWithToken(chatId, telegramId, username, text);
+    } catch (error) {
+      console.error('Error in handleTextAsUsername:', error);
+      await this.bot.sendMessage(chatId,
+        '❌ Xatolik yuz berdi. Iltimos, /start buyrug\'ini ishlatib, qarzdaftar.uz saytidan bog\'lanish linkini oling.'
+      );
     }
   }
 }
