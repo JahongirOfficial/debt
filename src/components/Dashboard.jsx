@@ -4,8 +4,9 @@ import { useTranslation } from '../utils/translationUtils';
 import { groupDebtsByDate, formatCurrency } from '../utils/debtUtils';
 import { useDebts } from '../utils/DebtContext';
 import { useAuth } from '../utils/AuthContext';
+import { useBranches } from '../utils/BranchContext';
 import { SkeletonLoader } from './SkeletonLoader';
-
+import { getTierDisplayName, getTierFeatures } from '../utils/subscriptionUtils';
 
 export function QarzdaftarDashboard() {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
@@ -13,6 +14,7 @@ export function QarzdaftarDashboard() {
   const t = useTranslation(language);
   const { debts, loading, error, userTier, debtLimit } = useDebts();
   const { user, settings } = useAuth();
+  const { activeBranch } = useBranches();
   const [currentTime, setCurrentTime] = useState(new Date());
 
 
@@ -52,12 +54,27 @@ export function QarzdaftarDashboard() {
   }
 
   // Calculate statistics for dashboard
-  // For free tier, only consider manageable debts for statistics
-  const manageableDebts = userTier === 'free' && debtLimit !== Infinity 
-    ? debts.slice(0, debtLimit) 
-    : debts;
+  // For employees, filter debts by their assigned branch
+  let filteredDebts = debts;
   
-  const totalDebt = debts
+  if (user?.role === 'employee' && user?.assignedBranchId) {
+    // Employee sees only debts from their assigned branch
+    console.log('Dashboard: Filtering debts for employee');
+    console.log('Total debts:', debts.length);
+    console.log('Assigned branch ID:', user.assignedBranchId);
+    console.log('Active branch:', activeBranch?._id);
+    filteredDebts = debts.filter(debt => debt.branchId === user.assignedBranchId);
+    console.log('Filtered debts:', filteredDebts.length);
+  }
+  
+  // For any tier, only consider manageable debts for statistics if limit is exceeded
+  const tierFeatures = getTierFeatures(userTier);
+  const actualLimit = tierFeatures.debtLimit;
+  const manageableDebts = actualLimit !== Infinity && filteredDebts.length > actualLimit
+    ? filteredDebts.slice(0, actualLimit) 
+    : filteredDebts;
+  
+  const totalDebt = filteredDebts
     .filter(debt => debt.status === 'pending')
     .reduce((sum, debt) => sum + debt.amount, 0);
   
@@ -65,12 +82,12 @@ export function QarzdaftarDashboard() {
     .filter(debt => debt.status === 'pending')
     .reduce((sum, debt) => sum + debt.amount, 0);
 
-  const paidDebts = debts.filter(debt => debt.status === 'paid');
+  const paidDebts = filteredDebts.filter(debt => debt.status === 'paid');
   const manageablePaidDebts = manageableDebts.filter(debt => debt.status === 'paid');
 
-  const pendingDebtsCount = debts.filter(debt => debt.status === 'pending').length;
+  const pendingDebtsCount = filteredDebts.filter(debt => debt.status === 'pending').length;
   const paidDebtsCount = paidDebts.length;
-  const totalDebtsCount = debts.length;
+  const totalDebtsCount = filteredDebts.length;
   
   const manageablePendingDebtsCount = manageableDebts.filter(debt => debt.status === 'pending').length;
   const manageablePaidDebtsCount = manageablePaidDebts.length;
@@ -153,23 +170,7 @@ export function QarzdaftarDashboard() {
         </div>
       </div>
 
-      {/* Free tier limitation notice */}
-      {userTier === 'free' && debtLimit !== Infinity && totalDebtsCount > debtLimit && (
-        <div className="mb-6 p-4 bg-yellow-50/80 dark:bg-yellow-900/30 backdrop-blur-sm border border-yellow-200/50 dark:border-yellow-700/50 rounded-2xl shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 dark:bg-yellow-800/50 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                <strong>Free tarif:</strong> Jami {totalDebtsCount} ta qarzingiz bor, lekin faqat {debtLimit} tasini boshqarishingiz mumkin.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Enhanced Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -200,9 +201,6 @@ export function QarzdaftarDashboard() {
             </p>
             <div className="flex items-center text-xs text-gray-500">
               <span>{pendingDebtsCount} ta faol qarz</span>
-              {userTier === 'free' && debtLimit !== Infinity && totalDebtsCount > debtLimit && (
-                <span className="ml-2 text-yellow-600">({manageablePendingDebtsCount} boshqariladigan)</span>
-              )}
             </div>
           </div>
         </div>
@@ -234,9 +232,6 @@ export function QarzdaftarDashboard() {
             </p>
             <div className="flex items-center text-xs text-gray-500">
               <span>{paidDebtsCount} ta to'langan qarz</span>
-              {userTier === 'free' && debtLimit !== Infinity && totalDebtsCount > debtLimit && (
-                <span className="ml-2 text-yellow-600">({manageablePaidDebtsCount} boshqariladigan)</span>
-              )}
             </div>
           </div>
         </div>

@@ -13,7 +13,8 @@ const getModels = () => {
     return {
       Debt: mongoose.model('Debt'),
       DebtHistory: mongoose.model('DebtHistory'),
-      User: mongoose.model('User')
+      User: mongoose.model('User'),
+      Employee: mongoose.model('Employee')
     };
   } catch (error) {
     return null;
@@ -80,7 +81,28 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 
   try {
-    const debts = await models.Debt.find({ userId: req.user.userId })
+    // Determine which user's debts to fetch
+    let targetUserId = req.user.userId;
+    
+    // If user is an employee, fetch owner's debts
+    if (req.user.role === 'employee') {
+      console.log('User is employee, looking for employee record...');
+      console.log('Employee user ID:', req.user.userId);
+      
+      const employee = await models.Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      console.log('Found employee:', employee ? employee._id : 'not found');
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+        console.log('Using owner ID:', targetUserId);
+      }
+    }
+
+    const debts = await models.Debt.find({ userId: targetUserId })
       .sort({ createdAt: -1 });
 
     res.json({
@@ -175,7 +197,22 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
   try {
     const { id } = req.params;
-    const debt = await models.Debt.findOne({ _id: id, userId: req.user.userId });
+    
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await models.Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+    
+    const debt = await models.Debt.findOne({ _id: id, userId: targetUserId });
 
     if (!debt) {
       return res.status(404).json({
@@ -193,7 +230,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     // Create history record
     const historyRecord = new models.DebtHistory({
-      userId: req.user.userId,
+      userId: targetUserId,
       debtId: debt._id,
       action: 'updated',
       amount: updatedDebt.amount,
@@ -242,7 +279,21 @@ router.patch('/:id/paid', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const debt = await models.Debt.findOne({ _id: id, userId: req.user.userId });
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await models.Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
+    const debt = await models.Debt.findOne({ _id: id, userId: targetUserId });
 
     if (!debt) {
       return res.status(404).json({
@@ -263,7 +314,7 @@ router.patch('/:id/paid', authenticateToken, async (req, res) => {
 
     // Create history record
     const historyRecord = new models.DebtHistory({
-      userId: req.user.userId,
+      userId: targetUserId,
       debtId: debt._id,
       action: 'paid',
       amount: debt.amount,
@@ -304,7 +355,21 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    const debt = await models.Debt.findOne({ _id: id, userId: req.user.userId });
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await models.Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
+    const debt = await models.Debt.findOne({ _id: id, userId: targetUserId });
 
     if (!debt) {
       return res.status(404).json({
@@ -315,7 +380,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 
     // Create history record before deletion
     const historyRecord = new models.DebtHistory({
-      userId: req.user.userId,
+      userId: targetUserId,
       debtId: debt._id,
       action: 'deleted',
       amount: debt.amount,
@@ -376,7 +441,21 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
       });
     }
 
-    const debt = await models.Debt.findOne({ _id: id, userId: req.user.userId });
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await models.Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
+    const debt = await models.Debt.findOne({ _id: id, userId: targetUserId });
 
     if (!debt) {
       return res.status(404).json({
@@ -407,7 +486,7 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
 
     // Create history record
     const historyRecord = new models.DebtHistory({
-      userId: req.user.userId,
+      userId: targetUserId,
       debtId: debt._id,
       action: 'adjustment',
       amount: adjustmentAmount,

@@ -1,6 +1,7 @@
 import { DebtCard } from './DebtCard';
 import { useTranslation } from '../../utils/translationUtils';
 import { useStoredState } from '../../utils/storageUtils';
+import { useAuth } from '../../utils/AuthContext';
 
 export function DebtList({ 
   debts, 
@@ -10,7 +11,16 @@ export function DebtList({
   onAddNew 
 }) {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
+  const { user } = useAuth();
   const t = useTranslation(language);
+
+  // Check employee permissions
+  const hasPermission = (permission) => {
+    if (user?.role !== 'employee') return true;
+    return user?.employeeInfo?.permissions?.[permission] || false;
+  };
+
+  const canAddDebt = hasPermission('canAddDebt');
 
   if (debts.length === 0) {
     return (
@@ -24,12 +34,14 @@ export function DebtList({
         <p className="text-gray-500 dark:text-gray-400 mb-4">
           {t('debts.noDebtsSubtitle', 'Yuqoridagi tugma orqali yangi qarz qo\'shing')}
         </p>
-        <button
-          onClick={onAddNew}
-          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
-        >
-          {t('debts.addNew', 'Yangi qarz qo\'shish')}
-        </button>
+        {canAddDebt && (
+          <button
+            onClick={onAddNew}
+            className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
+          >
+            {t('debts.addNew', 'Yangi qarz qo\'shish')}
+          </button>
+        )}
       </div>
     );
   }

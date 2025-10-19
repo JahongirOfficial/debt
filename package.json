@@ -11,7 +11,12 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:telegram": "cd backend && npm run test:telegram",
     "build": "vite build",
+    "build:pwa": "npm run build && npm run pwa:validate",
     "preview": "vite preview",
+    "preview:pwa": "npm run build:pwa && vite preview",
+    "pwa:validate": "echo 'PWA validation - check manifest.json and service worker'",
+    "pwa:icons": "echo 'Generate PWA icons from source image'",
+    "migrate:fix-old-debts": "cd backend && npm run migrate:fix-old-debts",
     "install:all": "npm install && cd backend && npm install"
   },
   "dependencies": {

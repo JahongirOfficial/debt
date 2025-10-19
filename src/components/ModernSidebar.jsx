@@ -7,6 +7,7 @@ import { useBranches } from '../utils/BranchContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import { BranchSelector } from './branches/BranchSelector';
 import { BranchCreateModal } from './branches/BranchCreateModal';
+import { getTierFeatures } from '../utils/subscriptionUtils';
 
 export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, onCollapseChange }) {
     const { language } = useLanguage();
@@ -18,9 +19,11 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [showCreateBranchModal, setShowCreateBranchModal] = useState(false);
 
-    // Check if user has reached the pending debt limit
+    // Check if user has reached the pending debt limit for their tier
     const pendingDebtsCount = debts ? debts.filter(debt => debt.status === 'pending').length : 0;
-    const hasReachedLimit = userTier === 'free' && debtLimit !== Infinity && pendingDebtsCount >= debtLimit;
+    const tierFeatures = getTierFeatures(userTier);
+    const actualLimit = tierFeatures.debtLimit;
+    const hasReachedLimit = actualLimit !== Infinity && pendingDebtsCount >= actualLimit;
 
     const handleCollapseToggle = () => {
         const newCollapsedState = !isCollapsed;
@@ -30,7 +33,7 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
         }
     };
 
-    const menuItems = [
+    const allMenuItems = [
         {
             id: 'dashboard',
             route: '/dashboard',
@@ -40,7 +43,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.dashboard', 'Dashboard'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin', 'employee']
         },
         {
             id: 'debts',
@@ -51,7 +55,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.debts', 'Qarzlar'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin', 'employee']
         },
         {
             id: 'branches',
@@ -62,7 +67,20 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.branches', 'Filiallar'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin']
+        },
+        {
+            id: 'employees',
+            route: '/employees',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            ),
+            label: t('navigation.employees', 'Xodimlar'),
+            badge: null,
+            allowedRoles: ['user', 'admin']
         },
         {
             id: 'calculator',
@@ -73,7 +91,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.calculator', 'Kalkulyator'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin', 'employee']
         },
         {
             id: 'ratings',
@@ -84,7 +103,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.ratings', 'Reytinglar'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin', 'employee']
         },
         {
             id: 'analytics',
@@ -95,7 +115,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.analytics', 'Analitika'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin']
         },
         {
             id: 'sms-notifications',
@@ -106,7 +127,44 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.smsNotifications', 'SMS Eslatmalar'),
-            badge: user?.subscriptionTier === 'free' ? 'PRO' : null
+            badge: user?.subscriptionTier === 'free' ? 'PRO' : null,
+            allowedRoles: ['user', 'admin']
+        },
+        {
+            id: 'admin-business-owners',
+            route: '/admin/business-owners',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            ),
+            label: 'Biznes Egalari',
+            badge: null,
+            allowedRoles: ['admin']
+        },
+        {
+            id: 'admin-employees',
+            route: '/admin/employees',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 715.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            ),
+            label: 'Xodimlar',
+            badge: null,
+            allowedRoles: ['admin']
+        },
+        {
+            id: 'admin-sms-reminders',
+            route: '/admin/sms-reminders',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            ),
+            label: 'SMS Eslatmalar',
+            badge: null,
+            allowedRoles: ['admin']
         },
         {
             id: 'pricing',
@@ -117,7 +175,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.pricing', 'Tariflar'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin']
         },
         {
             id: 'settings',
@@ -129,11 +188,36 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 </svg>
             ),
             label: t('navigation.settings', 'Sozlamalar'),
-            badge: null
+            badge: null,
+            allowedRoles: ['user', 'admin', 'employee']
         }
     ];
 
-    const getSubscriptionColor = (tier) => {
+    // Filter menu items based on user role and permissions
+    const menuItems = allMenuItems.filter(item => {
+        // Check basic role access
+        if (!item.allowedRoles.includes(user?.role || 'user')) {
+            return false;
+        }
+
+        // For employees, check specific permissions
+        if (user?.role === 'employee' && user?.employeeInfo?.permissions) {
+            const permissions = user.employeeInfo.permissions;
+
+            // Analytics requires canViewReports permission
+            if (item.id === 'analytics' && !permissions.canViewReports) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    const getSubscriptionColor = (tier, role) => {
+        if (role === 'employee') {
+            return 'from-orange-500 to-amber-500';
+        }
+
         switch (tier) {
             case 'pro':
                 return 'from-purple-500 to-pink-500';
@@ -146,7 +230,11 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
         }
     };
 
-    const getSubscriptionLabel = (tier) => {
+    const getSubscriptionLabel = (tier, role) => {
+        if (role === 'employee') {
+            return 'XODIM';
+        }
+
         switch (tier) {
             case 'pro':
                 return 'PRO';
@@ -157,6 +245,22 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
             default:
                 return 'FREE';
         }
+    };
+
+    const getUserIcon = (role) => {
+        if (role === 'employee') {
+            return (
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            );
+        }
+
+        return (
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
     };
 
     return (
@@ -185,10 +289,8 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200/20">
                     {!isCollapsed && (
                         <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${settings.theme === 'dark' ? 'from-blue-500 to-cyan-500' : 'from-orange-500 to-red-500'} flex items-center justify-center shadow-lg`}>
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getSubscriptionColor(user?.subscriptionTier, user?.role)} flex items-center justify-center shadow-lg`}>
+                                {getUserIcon(user?.role)}
                             </div>
                             <div>
                                 <h1 className={`text-xl font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
@@ -232,16 +334,22 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 {!isCollapsed && (
                     <div className="flex-shrink-0 p-4 border-b border-gray-200/20">
                         <div className="flex items-center space-x-3">
-                            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getSubscriptionColor(user?.subscriptionTier)} flex items-center justify-center text-white font-semibold text-lg shadow-lg`}>
-                                {user?.username?.charAt(0).toUpperCase() || 'U'}
+                            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${getSubscriptionColor(user?.subscriptionTier, user?.role)} flex items-center justify-center text-white font-semibold text-lg shadow-lg`}>
+                                {user?.role === 'employee' ? (
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                ) : (
+                                    user?.username?.charAt(0).toUpperCase() || 'U'
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className={`font-semibold truncate ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                     {user?.username || 'Foydalanuvchi'}
                                 </p>
                                 <div className="flex items-center space-x-2">
-                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getSubscriptionColor(user?.subscriptionTier)} text-white`}>
-                                        {getSubscriptionLabel(user?.subscriptionTier)}
+                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getSubscriptionColor(user?.subscriptionTier, user?.role)} text-white`}>
+                                        {getSubscriptionLabel(user?.subscriptionTier, user?.role)}
                                     </span>
                                 </div>
                             </div>
@@ -252,7 +360,30 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 {/* Fixed Branch Selector */}
                 {!isCollapsed && branches.length > 0 && (
                     <div className="flex-shrink-0 p-4 border-b border-gray-200/20">
-                        <BranchSelector onCreateBranch={() => setShowCreateBranchModal(true)} />
+                        {user?.role === 'employee' ? (
+                            // Employee: Show assigned branch info only
+                            <div className={`p-3 rounded-lg ${settings.theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                                <div className="flex items-center space-x-3">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white`}
+                                        style={{ backgroundColor: branches.find(b => b._id === user.assignedBranchId)?.color || '#3B82F6' }}>
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        </svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-medium truncate ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
+                                            {user.employeeInfo?.assignedBranchName || 'Tayinlangan filial'}
+                                        </p>
+                                        <p className={`text-xs ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
+                                            {user.employeeInfo?.position || 'Xodim'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Regular user: Show branch selector
+                            <BranchSelector onCreateBranch={() => setShowCreateBranchModal(true)} />
+                        )}
                     </div>
                 )}
 

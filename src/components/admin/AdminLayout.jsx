@@ -17,19 +17,19 @@ export function AdminLayout() {
   useEffect(() => {
     console.log('🔍 AdminLayout - Checking user:', user);
     console.log('🔍 AdminLayout - User role:', user?.role);
-    
+
     if (!user) {
       console.log('❌ No user - redirecting to login');
       navigate('/login');
       return;
     }
-    
+
     if (user.role !== 'admin') {
       console.log('❌ User is not admin - redirecting to dashboard');
       navigate('/dashboard');
       return;
     }
-    
+
     console.log('✅ User is admin - allowing access to admin panel');
   }, [user, navigate]);
 
@@ -69,7 +69,7 @@ export function AdminLayout() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Kirish taqiqlangan</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">Sizda admin paneliga kirish huquqi yo'q</p>
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
             className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 transform hover:scale-105 shadow-lg"
           >
@@ -81,35 +81,53 @@ export function AdminLayout() {
   }
 
   const navigation = [
-    { 
-      name: 'Dashboard', 
-      href: '/admin/dashboard', 
+    {
+      name: 'Dashboard',
+      href: '/admin/dashboard',
       icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
       gradient: 'from-blue-500 to-blue-600'
     },
-    { 
-      name: 'Foydalanuvchilar', 
-      href: '/admin/users', 
-      icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-      gradient: 'from-green-500 to-green-600'
+    {
+      name: 'Biznes Egalari',
+      href: '/admin/business-owners',
+      icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+      gradient: 'from-indigo-500 to-purple-600'
     },
-    { 
-      name: 'Tariflar', 
-      href: '/admin/pricing', 
+    {
+      name: 'Xodimlar',
+      href: '/admin/employees',
+      icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      gradient: 'from-green-500 to-emerald-600'
+    },
+    {
+      name: 'SMS Eslatmalar',
+      href: '/admin/sms-reminders',
+      icon: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z',
+      gradient: 'from-teal-500 to-cyan-600'
+    },
+    {
+      name: 'Foydalanuvchilar',
+      href: '/admin/users',
+      icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+      gradient: 'from-orange-500 to-red-600'
+    },
+    {
+      name: 'Tariflar',
+      href: '/admin/pricing',
       icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-      gradient: 'from-purple-500 to-purple-600'
+      gradient: 'from-purple-500 to-pink-600'
     },
-    { 
-      name: 'Hisobotlar', 
-      href: '/admin/reports', 
+    {
+      name: 'Hisobotlar',
+      href: '/admin/reports',
       icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      gradient: 'from-orange-500 to-orange-600'
+      gradient: 'from-yellow-500 to-orange-600'
     },
-    { 
-      name: 'Analitika', 
-      href: '/admin/analytics', 
+    {
+      name: 'Analitika',
+      href: '/admin/analytics',
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-      gradient: 'from-pink-500 to-pink-600'
+      gradient: 'from-rose-500 to-pink-600'
     },
   ];
 
@@ -131,7 +149,7 @@ export function AdminLayout() {
               </svg>
             </button>
           </div>
-          
+
           {/* Mobile Sidebar Content */}
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div className="flex-shrink-0 flex items-center px-6 mb-8">
@@ -147,7 +165,7 @@ export function AdminLayout() {
                 </div>
               </div>
             </div>
-            
+
             <nav className="px-4 space-y-2">
               {navigation.map((item) => {
                 const isActive = location.pathname === item.href;
@@ -156,16 +174,14 @@ export function AdminLayout() {
                     key={item.name}
                     to={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105`
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                    }`}
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105`
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                      }`}
                   >
                     <svg
-                      className={`mr-3 flex-shrink-0 h-5 w-5 ${
-                        isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-                      }`}
+                      className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -197,7 +213,7 @@ export function AdminLayout() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">Boshqaruv paneli</p>
               </div>
             </div>
-            
+
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
@@ -213,7 +229,7 @@ export function AdminLayout() {
               )}
             </button>
           </div>
-          
+
           {/* Navigation */}
           <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
             <nav className="px-4 space-y-2">
@@ -223,16 +239,14 @@ export function AdminLayout() {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                      isActive
-                        ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105`
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                    }`}
+                    className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${isActive
+                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg transform scale-105`
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                      }`}
                   >
                     <svg
-                      className={`mr-3 flex-shrink-0 h-5 w-5 ${
-                        isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
-                      }`}
+                      className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-500 dark:group-hover:text-gray-300'
+                        }`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -248,7 +262,7 @@ export function AdminLayout() {
               })}
             </nav>
           </div>
-          
+
           {/* User Profile Section */}
           <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
@@ -294,7 +308,7 @@ export function AdminLayout() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={toggleDarkMode}
@@ -310,7 +324,7 @@ export function AdminLayout() {
                   </svg>
                 )}
               </button>
-              
+
               <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-semibold text-sm">
                   {user?.username?.charAt(0).toUpperCase() || 'A'}
@@ -319,7 +333,7 @@ export function AdminLayout() {
             </div>
           </div>
         </div>
-        
+
         {/* Main content area */}
         <main className="flex-1 overflow-auto">
           <div className="p-6">

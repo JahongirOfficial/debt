@@ -33,6 +33,17 @@ export const BranchProvider = ({ children }) => {
     // Load active branch from localStorage
     useEffect(() => {
         if (user && branches.length > 0) {
+            // For employees, always set their assigned branch as active
+            if (user.role === 'employee' && user.assignedBranchId) {
+                const assignedBranch = branches.find(b => b._id === user.assignedBranchId);
+                if (assignedBranch && (!activeBranch || activeBranch._id !== assignedBranch._id)) {
+                    setActiveBranch(assignedBranch);
+                    localStorage.setItem(`activeBranchId_${user.id}`, assignedBranch._id);
+                }
+                return;
+            }
+
+            // For regular users, use saved branch or first branch
             const savedActiveBranchId = localStorage.getItem(`activeBranchId_${user.id}`);
 
             if (savedActiveBranchId) {
@@ -269,6 +280,12 @@ export const BranchProvider = ({ children }) => {
         // Prevent switching to disabled branches
         if (branch.isDisabled) {
             showError('Bu filial sizning tarif limitingizdan tashqarida. Tarifni yangilang yoki boshqa filialni tanlang.');
+            return;
+        }
+
+        // Prevent employees from switching to branches they're not assigned to
+        if (user?.role === 'employee' && user?.assignedBranchId && branch._id !== user.assignedBranchId) {
+            showError('Siz faqat tayinlangan filialingizda ishlashingiz mumkin.');
             return;
         }
 

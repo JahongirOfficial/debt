@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: './', // Use relative paths for assets
+  
+  // PWA Configuration
+  define: {
+    'process.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version || '1.0.0'),
+  },
+  
   build: {
     rollupOptions: {
       output: {
@@ -12,8 +18,18 @@ export default defineConfig({
         chunkFileNames: 'assets/[name].js',
         entryFileNames: 'assets/[name].js'
       }
+    },
+    // PWA optimizations
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
     }
   },
+  
   // Add server configuration
   server: {
     port: 5173, // Explicitly set the port
@@ -26,5 +42,12 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  
+  // PWA Preview server configuration
+  preview: {
+    port: 4173,
+    host: 'localhost',
+    open: true
   }
 })

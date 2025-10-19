@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { QarzdaftarDashboard } from './components/Dashboard';
 import { QarzdaftarDebts } from './components/Debts';
 import { QarzdaftarBranches } from './components/Branches';
+import { QarzdaftarEmployees } from './components/Employees';
 import { QarzdaftarCalculator } from './components/Calculator';
 import { QarzdaftarRatings } from './components/Ratings';
 import { QarzdaftarAnalytics } from './components/Analytics';
@@ -17,14 +18,18 @@ import { UserManagement } from './components/admin/UserManagement';
 import { PricingManagement } from './components/admin/PricingManagement';
 import { Reports } from './components/admin/Reports';
 import { Analytics } from './components/admin/Analytics';
+import { AdminBusinessOwnersPage } from './components/admin/AdminBusinessOwnersPage';
+import { AdminEmployeesPage } from './components/admin/AdminEmployeesPage';
+import { AdminSMSRemindersPage } from './components/admin/AdminSMSRemindersPage';
 import { ModernSidebar } from './components/ModernSidebar';
-import TelegramConnectionModal from './components/TelegramConnectionModal';
+import { PWAInstallPrompt, PWAUpdatePrompt } from './components/PWAInstallPrompt';
 
 import { useTranslation } from './utils/translationUtils';
 import { useLanguage } from './utils/LanguageContext.jsx';
 import { useAuth } from './utils/AuthContext.jsx';
 import { BranchProvider } from './utils/BranchContext.jsx';
 import { DebtProvider } from './utils/DebtContext.jsx';
+import { EmployeeProvider } from './utils/EmployeeContext.jsx';
 import { ToastProvider } from './utils/ToastContext.jsx';
 import { SkeletonLoader } from './components/SkeletonLoader';
 
@@ -85,6 +90,8 @@ export function QarzdaftarApp() {
         return 'debts';
       case '/branches':
         return 'branches';
+      case '/employees':
+        return 'employees';
       case '/calculator':
         return 'calculator';
       case '/ratings':
@@ -131,6 +138,9 @@ export function QarzdaftarApp() {
         break;
       case '/branches':
         setActiveSection('branches');
+        break;
+      case '/employees':
+        setActiveSection('employees');
         break;
       case '/calculator':
         setActiveSection('calculator');
@@ -265,13 +275,13 @@ export function QarzdaftarApp() {
         if (!contentType || !contentType.includes('application/json')) return;
 
         const data = await response.json();
-        
+
         if (data.success && !data.connected) {
           // Check if modal was skipped in last 24 hours
           const lastSkipped = localStorage.getItem('telegramModalSkipped');
           const now = Date.now();
           const oneDayInMs = 24 * 60 * 60 * 1000;
-          
+
           if (!lastSkipped || (now - parseInt(lastSkipped)) > oneDayInMs) {
             // Show modal after 5 seconds
             const timer = setTimeout(() => {
@@ -319,165 +329,165 @@ export function QarzdaftarApp() {
     <ToastProvider>
       <BranchProvider>
         <DebtProvider>
-        <style>{style}</style>
+          <EmployeeProvider>
+            <style>{style}</style>
 
-      {/* Check if current route is admin route */}
-      {location.pathname.startsWith('/admin') ? (
-        // Admin Layout - No main sidebar, only admin layout
-        <div className={`min-h-screen transition-colors duration-300 ${settings.theme === 'dark'
-          ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900'
-          : 'bg-gradient-to-br from-orange-50 via-red-50 to-orange-100'
-          }`}>
-          <Routes>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="pricing" element={<PricingManagement />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route index element={<AdminDashboard />} />
-            </Route>
-          </Routes>
-        </div>
-      ) : (
-        // Regular User Layout - With modern sidebar
-        <div className={`min-h-screen transition-colors duration-300 ${settings.theme === 'dark'
-          ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900'
-          : 'bg-gradient-to-br from-orange-50 via-red-50 to-orange-100'
-          }`}>
-
-          {/* Modern Sidebar */}
-          <ModernSidebar
-            activeSection={activeSection}
-            switchSection={switchSection}
-            isOpen={isMobileSidebarOpen}
-            onClose={() => setIsMobileSidebarOpen(false)}
-            onCollapseChange={setIsSidebarCollapsed}
-          />
-
-          {/* Mobile Menu Toggle Button */}
-          <button
-            className="md:hidden fixed top-4 right-4 z-30 w-12 h-12 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
-          >
-            {isMobileSidebarOpen ? (
-              <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
-
-
-
-
-
-
-
-          {/* Main Content with dynamic margin for modern sidebar */}
-          <div className={`flex-1 p-4 md:p-8 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-72'
-            }`}>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<QarzdaftarDashboard />} />
-              <Route path="/debts" element={<QarzdaftarDebts />} />
-              <Route path="/branches" element={<QarzdaftarBranches />} />
-              <Route path="/calculator" element={<QarzdaftarCalculator />} />
-              <Route path="/ratings" element={<QarzdaftarRatings />} />
-              <Route path="/analytics" element={<QarzdaftarAnalytics />} />
-              <Route path="/sms-notifications" element={<QarzdaftarSMSNotifications />} />
-              <Route path="/pricing" element={<QarzdaftarPricingPlans />} />
-              <Route path="/settings" element={<QarzdaftarSettings />} />
-            </Routes>
-          </div>
-        </div>
-      )}
-
-      {/* Modern Suggestion Notification */}
-      {showSuggestionNotification && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce-in hidden md:block">
-          <div
-            onClick={handleSuggestionClick}
-            className={`group relative cursor-pointer transform transition-all duration-500 hover:scale-105 animate-pulse-glow ${settings.theme === 'dark'
-                ? 'bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-slate-800/95 border border-slate-600/30'
-                : 'bg-gradient-to-br from-white/95 via-gray-50/95 to-white/95 border border-gray-200/50'
-              } rounded-2xl p-5 shadow-2xl hover:shadow-3xl backdrop-blur-lg max-w-xs`}
-          >
-            {/* Animated background glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-            {/* Floating particles effect */}
-            <div className="absolute inset-0 overflow-hidden rounded-2xl">
-              <div className="absolute top-2 right-4 w-1 h-1 bg-blue-400 rounded-full animate-ping"></div>
-              <div className="absolute top-4 right-8 w-1 h-1 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute top-6 right-6 w-1 h-1 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-            </div>
-
-            {/* Content */}
-            <div className="relative flex items-start gap-4">
-              {/* Modern Telegram icon with gradient */}
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-3 transition-transform duration-300">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-                </svg>
+            {/* Check if current route is admin route */}
+            {location.pathname.startsWith('/admin') ? (
+              // Admin Layout - No main sidebar, only admin layout
+              <div className={`min-h-screen transition-colors duration-300 ${settings.theme === 'dark'
+                ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900'
+                : 'bg-gradient-to-br from-orange-50 via-red-50 to-orange-100'
+                }`}>
+                <Routes>
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="business-owners" element={<AdminBusinessOwnersPage />} />
+                    <Route path="employees" element={<AdminEmployeesPage />} />
+                    <Route path="sms-reminders" element={<AdminSMSRemindersPage />} />
+                    <Route path="users" element={<UserManagement />} />
+                    <Route path="pricing" element={<PricingManagement />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="analytics" element={<Analytics />} />
+                    <Route index element={<AdminDashboard />} />
+                  </Route>
+                </Routes>
               </div>
+            ) : (
+              // Regular User Layout - With modern sidebar
+              <div className={`min-h-screen transition-colors duration-300 ${settings.theme === 'dark'
+                ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900'
+                : 'bg-gradient-to-br from-orange-50 via-red-50 to-orange-100'
+                }`}>
 
-              {/* Text content */}
-              <div className="flex-1 min-w-0">
-                <p className={`font-bold text-base leading-tight ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
+                {/* Modern Sidebar */}
+                <ModernSidebar
+                  activeSection={activeSection}
+                  switchSection={switchSection}
+                  isOpen={isMobileSidebarOpen}
+                  onClose={() => setIsMobileSidebarOpen(false)}
+                  onCollapseChange={setIsSidebarCollapsed}
+                />
+
+                {/* Mobile Menu Toggle Button */}
+                <button
+                  className="md:hidden fixed top-4 right-4 z-30 w-12 h-12 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                  aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
+                >
+                  {isMobileSidebarOpen ? (
+                    <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  )}
+                </button>
+
+
+
+
+
+
+
+                {/* Main Content with dynamic margin for modern sidebar */}
+                <div className={`flex-1 p-4 md:p-8 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-72'
                   }`}>
-                  Taklifingiz bormi?
-                </p>
-                <p className={`text-sm mt-1 leading-relaxed ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                  }`}>
-                  Telegram orqali bog'laning
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  <span className={`text-xs font-medium ${settings.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                    }`}>
-                    @opscoder
-                  </span>
-                  <svg className={`w-3 h-3 transform group-hover:translate-x-1 transition-transform duration-300 ${settings.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
-                    }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/dashboard" element={<QarzdaftarDashboard />} />
+                    <Route path="/debts" element={<QarzdaftarDebts />} />
+                    <Route path="/branches" element={<QarzdaftarBranches />} />
+                    <Route path="/employees" element={<QarzdaftarEmployees />} />
+                    <Route path="/calculator" element={<QarzdaftarCalculator />} />
+                    <Route path="/ratings" element={<QarzdaftarRatings />} />
+                    <Route path="/analytics" element={<QarzdaftarAnalytics />} />
+                    <Route path="/sms-notifications" element={<QarzdaftarSMSNotifications />} />
+                    <Route path="/pricing" element={<QarzdaftarPricingPlans />} />
+                    <Route path="/settings" element={<QarzdaftarSettings />} />
+                  </Routes>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Close button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowSuggestionNotification(false);
-              }}
-              className={`absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-90 ${settings.theme === 'dark'
-                  ? 'bg-slate-700/90 hover:bg-slate-600 text-slate-300 border border-slate-600/50'
-                  : 'bg-gray-100/90 hover:bg-gray-200 text-gray-600 border border-gray-200'
-                } shadow-lg backdrop-blur-sm`}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+            {/* Modern Suggestion Notification */}
+            {showSuggestionNotification && (
+              <div className="fixed bottom-6 right-6 z-50 animate-bounce-in hidden md:block">
+                <div
+                  onClick={handleSuggestionClick}
+                  className={`group relative cursor-pointer transform transition-all duration-500 hover:scale-105 animate-pulse-glow ${settings.theme === 'dark'
+                    ? 'bg-gradient-to-br from-slate-800/95 via-slate-900/95 to-slate-800/95 border border-slate-600/30'
+                    : 'bg-gradient-to-br from-white/95 via-gray-50/95 to-white/95 border border-gray-200/50'
+                    } rounded-2xl p-5 shadow-2xl hover:shadow-3xl backdrop-blur-lg max-w-xs`}
+                >
+                  {/* Animated background glow */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-      {/* Telegram Connection Modal */}
-      <TelegramConnectionModal
-        isOpen={showTelegramModal}
-        onClose={() => setShowTelegramModal(false)}
-        user={user}
-      />
+                  {/* Floating particles effect */}
+                  <div className="absolute inset-0 overflow-hidden rounded-2xl">
+                    <div className="absolute top-2 right-4 w-1 h-1 bg-blue-400 rounded-full animate-ping"></div>
+                    <div className="absolute top-4 right-8 w-1 h-1 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute top-6 right-6 w-1 h-1 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+                  </div>
 
-      {/* Debug: Manual modal trigger (remove in production) */}
-      {process.env.NODE_ENV === 'development' && null}
+                  {/* Content */}
+                  <div className="relative flex items-start gap-4">
+                    {/* Modern Telegram icon with gradient */}
+                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:rotate-3 transition-transform duration-300">
+                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+                      </svg>
+                    </div>
+
+                    {/* Text content */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold text-base leading-tight ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
+                        }`}>
+                        Taklifingiz bormi?
+                      </p>
+                      <p className={`text-sm mt-1 leading-relaxed ${settings.theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                        }`}>
+                        Telegram orqali bog'laning
+                      </p>
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className={`text-xs font-medium ${settings.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                          }`}>
+                          @opscoder
+                        </span>
+                        <svg className={`w-3 h-3 transform group-hover:translate-x-1 transition-transform duration-300 ${settings.theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                          }`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Close button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSuggestionNotification(false);
+                    }}
+                    className={`absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-90 ${settings.theme === 'dark'
+                      ? 'bg-slate-700/90 hover:bg-slate-600 text-slate-300 border border-slate-600/50'
+                      : 'bg-gray-100/90 hover:bg-gray-200 text-gray-600 border border-gray-200'
+                      } shadow-lg backdrop-blur-sm`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PWA Components */}
+            <PWAInstallPrompt />
+            <PWAUpdatePrompt />
+          </EmployeeProvider>
         </DebtProvider>
       </BranchProvider>
     </ToastProvider>

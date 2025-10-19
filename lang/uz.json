@@ -29,6 +29,7 @@
     "dashboard": "Bosh menu",
     "debts": "Qarzlar",
     "branches": "Filiallar",
+    "employees": "Xodimlar",
     "calculator": "Kalkulyator",
     "ratings": "Reytinglar",
     "analytics": "Analitika",
@@ -126,7 +127,7 @@
     "threeDaysLeft": "3 kun qoldi",
     "overdue": "Muddati o'tib ketgan",
     "pending": "Kutilayotgan",
-    "paid": "To'langan",
+    "paidStatus": "To'langan",
     "all": "Barchasi",
     "noResults": "Filtr bo'yicha qarzlar topilmadi",
     "noResultsSubtitle": "Filtr sozlamalarini o'zgartiring",
@@ -184,7 +185,6 @@
     "amountPaid": "To'landi",
     "amountUnchanged": "Miqdor o'zgarmadi",
     "added": "qo'shildi",
-    "paid": "To'landi",
     "to": "ga",
     "action": {
       "created": "Yaratilgan",
@@ -480,17 +480,17 @@
       "noDebts": "0",
       "debtCountNote": "Bu yerda haqiqiy qarzlar soni bo'ladi"
     },
-    "language": {
+    "languageSettings": {
       "title": "Til sozlamalari",
       "interface": "Interfeys tili",
       "description": "Ilova tilini tanlang"
     },
-    "currency": {
+    "currencySettings": {
       "title": "Valyuta sozlamalari",
       "main": "Asosiy valyuta",
       "description": "Qarzlar ko'rsatish uchun asosiy valyuta"
     },
-    "theme": {
+    "themeSettings": {
       "title": "Mavzu sozlamalari",
       "color": "Rang mavzusi",
       "description": "Yorug' yoki qorong'u mavzuni tanlang"
@@ -518,5 +518,58 @@
     "EUR": "EUR - Yevro",
     "RUB": "RUB - Rubl",
     "TJS": "TJS - Tojik somoni"
+  },
+  "employees": {
+    "title": "Xodimlar",
+    "subtitle": "Xodimlarni boshqaring va ruxsatlarni sozlang",
+    "addEmployee": "Xodim qo'shish",
+    "addFirstEmployee": "Birinchi xodimni qo'shish",
+    "upgrade": "Tarifni oshiring",
+    "noEmployees": "Hali xodimlar yo'q",
+    "noEmployeesDesc": "Birinchi xodimingizni qo'shing va ruxsatlarni sozlang",
+    "name": "Ism",
+    "phone": "Telefon",
+    "position": "Lavozim",
+    "branch": "Filial",
+    "permissions": "Ruxsatlar",
+    "notes": "Izohlar",
+    "status": "Holat",
+    "active": "Faol",
+    "inactive": "Nofaol",
+    "hireDate": "Ishga qabul qilingan sana",
+    "loginInfo": "Login ma'lumotlari",
+    "username": "Foydalanuvchi nomi",
+    "password": "Parol",
+    "copyLoginInfo": "Login ma'lumotlarini nusxalash",
+    "loginInfoCopied": "Login ma'lumotlari nusxalandi",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "addNewEmployee": "Yangi xodim qo'shish",
+    "editEmployee": "Xodimni tahrirlash",
+    "deleteEmployee": "Xodimni o'chirish",
+    "deleteConfirm": "Haqiqatan ham bu xodimni o'chirmoqchimisiz?",
+    "deleteWarning": "Xodim o'chirilganda uning login hisobi ham o'chiriladi va qayta tiklab bo'lmaydi.",
+    "employeeAdded": "Xodim muvaffaqiyatli qo'shildi",
+    "employeeUpdated": "Xodim ma'lumotlari yangilandi",
+    "employeeDeleted": "Xodim o'chirildi",
+    "permissionsList": {
+      "canAddDebt": "Qarz qo'shish",
+      "canEditDebt": "Qarzni tahrirlash",
+      "canDeleteDebt": "Qarzni o'chirish",
+      "canViewDebts": "Qarzlarni ko'rish",
+      "canManagePayments": "To'lovlarni boshqarish",
+      "canViewReports": "Hisobotlarni ko'rish",
+      "canManageCreditors": "Kreditorlarni boshqarish"
+    },
+    "validation": {
+      "nameRequired": "Ism majburiy maydon",
+      "phoneRequired": "Telefon majburiy maydon",
+      "branchRequired": "Filial majburiy maydon",
+      "allFieldsRequired": "Ism, telefon va filial majburiy maydonlar",
+      "phoneExists": "Bu telefon raqami bilan xodim allaqachon mavjud",
+      "limitReached": "Xodimlar chegarasi tugadi. Sizning {{tier}} tarifingiz {{limit}} ta xodimga ruxsat beradi."
+    }
   }
 }

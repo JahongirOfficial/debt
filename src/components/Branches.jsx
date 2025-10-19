@@ -9,6 +9,7 @@ import { BranchCreateModal } from './branches/BranchCreateModal';
 import { BranchSettingsModal } from './branches/BranchSettingsModal';
 import { BranchDeleteModal } from './branches/BranchDeleteModal';
 import { SkeletonLoader } from './SkeletonLoader';
+import { getTierDisplayName } from '../utils/subscriptionUtils';
 
 export function QarzdaftarBranches() {
   const navigate = useNavigate();
@@ -67,10 +68,18 @@ export function QarzdaftarBranches() {
   };
 
   const handleEditBranch = (branch) => {
+    if (user?.role === 'employee') {
+      showSuccess('Xodimlar filial sozlamalarini o\'zgartira olmaydi');
+      return;
+    }
     setEditingBranch(branch);
   };
 
   const handleDeleteBranch = (branch) => {
+    if (user?.role === 'employee') {
+      showSuccess('Xodimlar filialni o\'chira olmaydi');
+      return;
+    }
     setDeletingBranch(branch);
   };
 
@@ -116,9 +125,7 @@ export function QarzdaftarBranches() {
               </div>
               <div>
                 <h3 className={`font-semibold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  {user?.subscriptionTier === 'pro' ? 'Pro' :
-                   user?.subscriptionTier === 'standard' ? 'Standard' :
-                   user?.subscriptionTier === 'lite' ? 'Lite' : 'Free'} tarif
+                  {getTierDisplayName(user?.subscriptionTier)} tarif
                 </h3>
                 <p className={`text-sm ${settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                   {branches.length}/{branchLimit} filial ishlatilmoqda
@@ -219,7 +226,7 @@ export function QarzdaftarBranches() {
                     Tarifni yangilang
                   </button>
                 </div>
-              ) : (
+              ) : user?.role !== 'employee' ? (
                 <div className="flex justify-end space-x-2">
                   <button
                     onClick={(e) => {
@@ -252,12 +259,22 @@ export function QarzdaftarBranches() {
                     </button>
                   )}
                 </div>
+              ) : (
+                <div className="flex justify-end">
+                  <span className={`text-sm px-3 py-1 rounded-full ${
+                    user?.assignedBranchId === branch._id
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                  }`}>
+                    {user?.assignedBranchId === branch._id ? 'Tayinlangan filial' : 'Ko\'rish uchun'}
+                  </span>
+                </div>
               )}
             </div>
           ))}
 
           {/* Create Branch Card */}
-          {canCreateBranch && (
+          {canCreateBranch && user?.role !== 'employee' && (
             <div
               onClick={() => setShowCreateModal(true)}
               className={`p-4 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-[1.02] ${

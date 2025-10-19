@@ -9,6 +9,8 @@ import TelegramBotHandler from './services/TelegramBotHandler.js';
 import DailyReportService from './services/DailyReportService.js';
 import authRoutes from './routes/auth.js';
 import debtRoutes from './routes/debts.js';
+import employeeRoutes from './routes/employees.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -220,7 +222,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'employee'],
     default: 'user'
   },
   status: {
@@ -732,6 +734,111 @@ try {
   CreditorRating = mongoose.model('CreditorRating');
 }
 
+// Employee Schema (MongoDB ulangan bo'lsa)
+const employeeSchema = new mongoose.Schema({
+  ownerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  employeeUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true
+  },
+  branchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: true,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+    unique: true
+  },
+  position: {
+    type: String,
+    trim: true,
+    maxlength: 100,
+    default: 'Xodim'
+  },
+  permissions: {
+    canAddDebt: {
+      type: Boolean,
+      default: false
+    },
+    canEditDebt: {
+      type: Boolean,
+      default: false
+    },
+    canDeleteDebt: {
+      type: Boolean,
+      default: false
+    },
+    canViewDebts: {
+      type: Boolean,
+      default: true
+    },
+    canManagePayments: {
+      type: Boolean,
+      default: false
+    },
+    canViewReports: {
+      type: Boolean,
+      default: false
+    },
+    canManageCreditors: {
+      type: Boolean,
+      default: false
+    }
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
+  hireDate: {
+    type: Date,
+    default: Date.now
+  },
+  notes: {
+    type: String,
+    trim: true,
+    maxlength: 500
+  },
+  generatedPassword: {
+    type: String,
+    required: true
+  }
+}, {
+  timestamps: true
+});
+
+// Employee indexes
+employeeSchema.index({ ownerId: 1, branchId: 1 });
+employeeSchema.index({ ownerId: 1, isActive: 1 });
+employeeSchema.index({ branchId: 1, isActive: 1 });
+employeeSchema.index({ employeeUserId: 1 });
+employeeSchema.index({ phone: 1 }, { unique: true });
+
+// Employee model (MongoDB ulangan bo'lsa)
+let Employee;
+try {
+  Employee = mongoose.model('Employee', employeeSchema);
+} catch (error) {
+  Employee = mongoose.model('Employee');
+}
+
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'qarzdaftar_jwt_secret_key';
 
@@ -846,10 +953,108 @@ const setupDatabaseIndexes = async () => {
         console.log('BranchSettings indexes already exist');
       }
 
+      // Employee collection indexes
+      try {
+        await Employee.collection.createIndex({ ownerId: 1, branchId: 1 });
+        await Employee.collection.createIndex({ ownerId: 1, isActive: 1 });
+        await Employee.collection.createIndex({ branchId: 1, isActive: 1 });
+        await Employee.collection.createIndex({ employeeUserId: 1 });
+        await Employee.collection.createIndex({ phone: 1 }, { unique: true });
+        console.log('Employee indexes created');
+      } catch (error) {
+        if (error.code !== 86) throw error;
+        console.log('Employee indexes already exist');
+      }
+
       console.log('Database indexes setup completed successfully');
+      
+      // Check and fix old debts without branchId
+      await checkAndFixOldDebts();
     }
   } catch (error) {
     console.error('Error creating database indexes:', error);
+  }
+};
+
+// Function to check and fix old debts without branchId
+const checkAndFixOldDebts = async () => {
+  try {
+    console.log('🔍 Checking for old debts without branchId...');
+    
+    // Find debts without branchId
+    const oldDebts = await Debt.find({ branchId: { $exists: false } }).limit(10);
+    
+    if (oldDebts.length > 0) {
+      console.log(`📊 Found ${oldDebts.length} old debts without branchId`);
+      
+      // Get unique user IDs from old debts
+      const userIds = [...new Set(oldDebts.map(debt => debt.userId.toString()))];
+      
+      let fixedDebts = 0;
+      
+      for (const userId of userIds) {
+        try {
+          // Find user's default branch or create one
+          let defaultBranch = await Branch.findOne({ 
+            userId: userId, 
+            isActive: true 
+          }).sort({ createdAt: 1 });
+          
+          if (!defaultBranch) {
+            // Create default branch for user
+            const user = await User.findById(userId);
+            if (user) {
+              defaultBranch = new Branch({
+                userId: userId,
+                name: 'Asosiy filial',
+                description: 'Sizning asosiy filialingiz',
+                currency: 'UZS',
+                color: '#3B82F6',
+                icon: 'building',
+                isActive: true
+              });
+              
+              await defaultBranch.save();
+              
+              // Set as user's active branch if not set
+              if (!user.activeBranchId) {
+                await User.findByIdAndUpdate(userId, {
+                  activeBranchId: defaultBranch._id
+                });
+              }
+              
+              console.log(`✅ Created default branch for user ${user.username}`);
+            }
+          }
+          
+          if (defaultBranch) {
+            // Update user's debts without branchId
+            const result = await Debt.updateMany(
+              { 
+                userId: userId, 
+                branchId: { $exists: false } 
+              },
+              { 
+                $set: { branchId: defaultBranch._id } 
+              }
+            );
+            
+            fixedDebts += result.modifiedCount;
+            console.log(`✅ Fixed ${result.modifiedCount} debts for user ${userId}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error fixing debts for user ${userId}:`, error);
+        }
+      }
+      
+      if (fixedDebts > 0) {
+        console.log(`🎉 Successfully fixed ${fixedDebts} old debts!`);
+      }
+    } else {
+      console.log('✅ No old debts found - all debts have branchId');
+    }
+  } catch (error) {
+    console.error('❌ Error checking old debts:', error);
   }
 };
 
@@ -1251,9 +1456,40 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
+    // Check if user is an employee and get employee details
+    let displayName = user.username;
+    let employeeInfo = null;
+    let assignedBranchId = null;
+    
+    if (user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: user._id,
+        isActive: true 
+      }).populate('branchId', 'name _id');
+      
+      if (employee) {
+        displayName = employee.name; // Use employee's real name instead of username
+        assignedBranchId = employee.branchId._id;
+        employeeInfo = {
+          employeeId: employee._id,
+          name: employee.name,
+          position: employee.position,
+          permissions: employee.permissions,
+          assignedBranchId: assignedBranchId,
+          assignedBranchName: employee.branchId.name
+        };
+      }
+    }
+
     // JWT token generatsiya qilish
     const token = jwt.sign(
-      { userId: user._id, username: user.username, role: user.role },
+      { 
+        userId: user._id, 
+        username: displayName, 
+        role: user.role,
+        employeeInfo: employeeInfo,
+        assignedBranchId: assignedBranchId
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -1264,12 +1500,14 @@ app.post('/api/auth/login', async (req, res) => {
       token,
       user: {
         id: user._id,
-        username: user.username,
+        username: displayName,
         phone: user.phone,
         subscriptionTier: user.subscriptionTier,
         role: user.role,
         status: user.status,
-        avatarColor: user.avatarColor
+        avatarColor: user.avatarColor,
+        employeeInfo: employeeInfo,
+        assignedBranchId: assignedBranchId
       }
     });
   } catch (error) {
@@ -1310,17 +1548,44 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
       });
     }
 
+    // Check if user is an employee and get employee details
+    let displayName = user.username;
+    let employeeInfo = null;
+    let assignedBranchId = null;
+    
+    if (user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: user._id,
+        isActive: true 
+      }).populate('branchId', 'name _id');
+      
+      if (employee) {
+        displayName = employee.name;
+        assignedBranchId = employee.branchId._id;
+        employeeInfo = {
+          employeeId: employee._id,
+          name: employee.name,
+          position: employee.position,
+          permissions: employee.permissions,
+          assignedBranchId: assignedBranchId,
+          assignedBranchName: employee.branchId.name
+        };
+      }
+    }
+
     res.json({
       success: true,
       user: {
         id: user._id,
-        username: user.username,
+        username: displayName,
         phone: user.phone,
         subscriptionTier: user.subscriptionTier,
         role: user.role,
         avatarColor: user.avatarColor,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
+        employeeInfo: employeeInfo,
+        assignedBranchId: assignedBranchId
       }
     });
   } catch (error) {
@@ -1564,12 +1829,34 @@ app.get('/api/debts', authenticateToken, async (req, res) => {
     const { status, startDate, endDate, search } = req.query;
 
     // Get user's subscription tier and debt limit
-    const user = await User.findById(req.user.userId);
+    let user = await User.findById(req.user.userId);
+    let targetUserId = req.user.userId;
+    
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
+    }
+
+    // If user is an employee, get owner's debts and limits
+    if (user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: user._id,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+        user = await User.findById(employee.ownerId);
+        
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: 'Owner not found'
+          });
+        }
+      }
     }
 
     const getUserDebtLimit = (tier) => {
@@ -1578,6 +1865,8 @@ app.get('/api/debts', authenticateToken, async (req, res) => {
           return Infinity; // Unlimited for Pro tier
         case 'standard':
           return 150;
+        case 'lite':
+          return 50;
         case 'free':
         default:
           return 20;
@@ -1587,8 +1876,13 @@ app.get('/api/debts', authenticateToken, async (req, res) => {
     const userDebtLimit = getUserDebtLimit(user.subscriptionTier);
     const userTier = user.subscriptionTier || 'free';
 
-    // So'rov yaratish
-    const query = { userId: req.user.userId };
+    // So'rov yaratish (use targetUserId for fetching debts)
+    const query = { userId: targetUserId };
+
+    // Employee uchun faqat o'z branchidagi qarzlarni ko'rsatish
+    if (req.user.role === 'employee' && req.user.assignedBranchId) {
+      query.branchId = req.user.assignedBranchId;
+    }
 
     // Status bo'yicha filtrlash
     if (status && ['pending', 'paid'].includes(status)) {
@@ -1662,12 +1956,34 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
     }
 
     // Get user's subscription tier and debt limit
-    const user = await User.findById(req.user.userId);
+    let user = await User.findById(req.user.userId);
+    let ownerId = req.user.userId;
+    
     if (!user) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
+    }
+
+    // If user is an employee, get the owner's limits
+    if (user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: user._id,
+        isActive: true 
+      });
+      
+      if (employee) {
+        ownerId = employee.ownerId;
+        user = await User.findById(employee.ownerId);
+        
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            message: 'Owner not found'
+          });
+        }
+      }
     }
 
     const getUserDebtLimit = (tier) => {
@@ -1676,18 +1992,35 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
           return Infinity; // Unlimited for Pro tier
         case 'standard':
           return 150;
+        case 'lite':
+          return 50;
         case 'free':
         default:
           return 20;
       }
     };
 
-    // No debt creation limit - users can create unlimited debts
-    // Limitation is only on management (editing/deleting) of pending debts
+    // Check debt limit for the owner (applies to all employees under this owner)
+    const currentDebtCount = await Debt.countDocuments({ 
+      userId: ownerId, 
+      status: 'pending' 
+    });
+    
+    const debtLimit = getUserDebtLimit(user.subscriptionTier);
+    
+    if (debtLimit !== Infinity && currentDebtCount >= debtLimit) {
+      return res.status(400).json({
+        success: false,
+        message: `Qarz limiti tugagan. ${user.subscriptionTier.toUpperCase()} tarif ${debtLimit} ta qarzga ruxsat beradi.`,
+        currentCount: currentDebtCount,
+        limit: debtLimit,
+        tier: user.subscriptionTier
+      });
+    }
 
-    // Yangi qarz yaratish
+    // Yangi qarz yaratish (use ownerId for debt ownership)
     const debt = new Debt({
-      userId: req.user.userId,
+      userId: ownerId, // Use owner's ID for debt ownership
       creditor,
       amount,
       description,
@@ -1695,14 +2028,15 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
       countryCode: countryCode || '+998',
       debtDate: new Date(debtDate),
       currency: currency || 'UZS',
-      status: 'pending'
+      status: 'pending',
+      branchId: req.body.branchId // Add branchId from request
     });
 
     await debt.save();
 
     // Create debt history record
     const debtHistory = new DebtHistory({
-      userId: req.user.userId,
+      userId: ownerId, // Use owner's ID for history
       debtId: debt._id,
       action: 'created',
       amount: debt.amount,
@@ -1711,7 +2045,7 @@ app.post('/api/debts', authenticateToken, async (req, res) => {
       creditor: debt.creditor,
       description: debt.description,
       status: debt.status,
-      reason: reason || '' // Add reason to debt history
+      reason: reason || `Qarz yaratildi${user.role === 'employee' ? ' (xodim tomonidan)' : ''}` // Add reason to debt history
     });
 
     await debtHistory.save();
@@ -1838,10 +2172,24 @@ app.put('/api/debts/:id', authenticateToken, async (req, res) => {
   try {
     const { amount, phone, countryCode, description, reason } = req.body;
 
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
     // Avvalgi qarzni olish va branch ownership tekshirish
     const existingDebt = await Debt.findOne({
       _id: req.params.id,
-      userId: req.user.userId
+      userId: targetUserId
     }).populate('branchId');
 
     if (!existingDebt) {
@@ -1956,10 +2304,24 @@ app.delete('/api/debts/:id', authenticateToken, async (req, res) => {
   try {
     const { reason } = req.body; // Get reason from request body
 
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
     // Avvalgi qarzni olish va branch ownership tekshirish
     const existingDebt = await Debt.findOne({
       _id: req.params.id,
-      userId: req.user.userId
+      userId: targetUserId
     }).populate('branchId');
 
     if (!existingDebt) {
@@ -2004,7 +2366,7 @@ app.delete('/api/debts/:id', authenticateToken, async (req, res) => {
     // Qarzni o'chirish
     const debt = await Debt.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user.userId
+      userId: targetUserId
     });
 
     if (!debt) {
@@ -2047,10 +2409,24 @@ app.patch('/api/debts/:id/pay', authenticateToken, async (req, res) => {
   try {
     const { reason } = req.body; // Get reason from request body
 
+    // Determine target user ID (for employees, use owner's ID)
+    let targetUserId = req.user.userId;
+    
+    if (req.user.role === 'employee') {
+      const employee = await Employee.findOne({ 
+        employeeUserId: req.user.userId,
+        isActive: true 
+      });
+      
+      if (employee) {
+        targetUserId = employee.ownerId;
+      }
+    }
+
     // Avvalgi qarzni olish
     const existingDebt = await Debt.findOne({
       _id: req.params.id,
-      userId: req.user.userId
+      userId: targetUserId
     });
 
     if (!existingDebt) {
@@ -3493,6 +3869,8 @@ app.get('/api/admin/analytics', authenticateToken, async (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/debts', debtRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Telegram webhook endpoint
 app.post('/api/telegram/webhook', async (req, res) => {
@@ -4340,4 +4718,466 @@ app.use((req, res) => {
     success: false,
     message: 'API endpoint not found'
   });
+});
+
+// ==================== EMPLOYEE ENDPOINTS ====================
+
+// Get all employees for user
+app.get('/api/employees', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      employees: [
+        {
+          _id: 'test-employee-1',
+          name: 'Ali Valiyev',
+          phone: '+998901234567',
+          position: 'Kassir',
+          branchId: 'test-branch-1',
+          branchName: 'Asosiy filial',
+          permissions: {
+            canAddDebt: true,
+            canEditDebt: false,
+            canDeleteDebt: false,
+            canViewDebts: true,
+            canManagePayments: true,
+            canViewReports: false,
+            canManageCreditors: false
+          },
+          isActive: true,
+          hireDate: new Date(),
+          generatedPassword: 'emp123456'
+        }
+      ]
+    });
+  }
+
+  try {
+    const employees = await Employee.find({
+      ownerId: req.user.userId,
+      isActive: true
+    })
+    .populate('branchId', 'name')
+    .populate('employeeUserId', 'username')
+    .sort({ createdAt: -1 });
+
+    const formattedEmployees = employees.map(emp => ({
+      _id: emp._id,
+      name: emp.name,
+      phone: emp.phone,
+      position: emp.position,
+      branchId: emp.branchId._id,
+      branchName: emp.branchId.name,
+      employeeUsername: emp.employeeUserId.username,
+      permissions: emp.permissions,
+      isActive: emp.isActive,
+      hireDate: emp.hireDate,
+      notes: emp.notes,
+      generatedPassword: emp.generatedPassword,
+      createdAt: emp.createdAt
+    }));
+
+    res.json({
+      success: true,
+      employees: formattedEmployees
+    });
+  } catch (error) {
+    console.error('Get employees error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching employees'
+    });
+  }
+});
+
+// Add new employee
+app.post('/api/employees', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Employee added successfully (test mode)',
+      employee: {
+        _id: 'test-employee-new',
+        name: req.body.name,
+        phone: req.body.phone,
+        position: req.body.position,
+        branchId: req.body.branchId,
+        permissions: req.body.permissions,
+        generatedPassword: 'emp' + Math.random().toString(36).substr(2, 6)
+      }
+    });
+  }
+
+  try {
+    const { name, phone, position, branchId, permissions, notes } = req.body;
+
+    // Validation
+    if (!name || !phone || !branchId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Name, phone, and branch are required'
+      });
+    }
+
+    // Verify branch ownership
+    const branch = await Branch.findOne({
+      _id: branchId,
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: 'Branch not found'
+      });
+    }
+
+    // Check employee limit based on subscription tier
+    const user = await User.findById(req.user.userId);
+    const employeeCount = await Employee.countDocuments({
+      ownerId: req.user.userId,
+      isActive: true
+    });
+
+    const branchCount = await Branch.countDocuments({
+      userId: req.user.userId,
+      isActive: true
+    });
+
+    // Employee limit = branch count (same as branch limit)
+    const EMPLOYEE_LIMITS = {
+      free: 1,
+      lite: 2,
+      standard: 3,
+      pro: 5
+    };
+
+    const employeeLimit = EMPLOYEE_LIMITS[user.subscriptionTier] || 1;
+
+    if (employeeCount >= employeeLimit) {
+      return res.status(400).json({
+        success: false,
+        message: `Employee limit reached. Your ${user.subscriptionTier} plan allows ${employeeLimit} employees.`
+      });
+    }
+
+    // Check if phone already exists
+    const existingEmployee = await Employee.findOne({ phone });
+    if (existingEmployee) {
+      return res.status(400).json({
+        success: false,
+        message: 'Employee with this phone number already exists'
+      });
+    }
+
+    // Generate password for employee
+    const generatedPassword = 'emp' + Math.random().toString(36).substr(2, 6);
+    
+    // Create employee user account
+    const employeeUsername = phone.replace(/[^0-9]/g, ''); // Use phone digits as username
+    
+    // Check if username already exists
+    let finalUsername = employeeUsername;
+    let counter = 1;
+    while (await User.findOne({ username: finalUsername })) {
+      finalUsername = employeeUsername + counter;
+      counter++;
+    }
+
+    const employeeUser = new User({
+      username: finalUsername,
+      phone: phone,
+      password: generatedPassword,
+      subscriptionTier: 'free',
+      role: 'employee',
+      avatarColor: generateRandomAvatarColor()
+    });
+
+    await employeeUser.save();
+
+    // Create employee record
+    const employee = new Employee({
+      ownerId: req.user.userId,
+      employeeUserId: employeeUser._id,
+      branchId,
+      name: name.trim(),
+      phone: phone.trim(),
+      position: position?.trim() || 'Xodim',
+      permissions: permissions || {
+        canAddDebt: false,
+        canEditDebt: false,
+        canDeleteDebt: false,
+        canViewDebts: true,
+        canManagePayments: false,
+        canViewReports: false,
+        canManageCreditors: false
+      },
+      notes: notes?.trim() || '',
+      generatedPassword
+    });
+
+    await employee.save();
+
+    // Populate branch info for response
+    await employee.populate('branchId', 'name');
+
+    res.status(201).json({
+      success: true,
+      message: 'Employee added successfully',
+      employee: {
+        _id: employee._id,
+        name: employee.name,
+        phone: employee.phone,
+        position: employee.position,
+        branchId: employee.branchId._id,
+        branchName: employee.branchId.name,
+        employeeUsername: finalUsername,
+        permissions: employee.permissions,
+        isActive: employee.isActive,
+        hireDate: employee.hireDate,
+        notes: employee.notes,
+        generatedPassword: employee.generatedPassword,
+        createdAt: employee.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Add employee error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error adding employee'
+    });
+  }
+});
+
+// Update employee
+app.put('/api/employees/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Employee updated successfully (test mode)'
+    });
+  }
+
+  try {
+    const employeeId = req.params.id;
+    const { name, phone, position, branchId, permissions, notes, isActive } = req.body;
+
+    // Find employee and verify ownership
+    const employee = await Employee.findOne({
+      _id: employeeId,
+      ownerId: req.user.userId
+    });
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    // If branchId is being changed, verify new branch ownership
+    if (branchId && branchId !== employee.branchId.toString()) {
+      const branch = await Branch.findOne({
+        _id: branchId,
+        userId: req.user.userId,
+        isActive: true
+      });
+
+      if (!branch) {
+        return res.status(404).json({
+          success: false,
+          message: 'Branch not found'
+        });
+      }
+    }
+
+    // If phone is being changed, check for duplicates
+    if (phone && phone !== employee.phone) {
+      const existingEmployee = await Employee.findOne({ 
+        phone,
+        _id: { $ne: employeeId }
+      });
+      
+      if (existingEmployee) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employee with this phone number already exists'
+        });
+      }
+
+      // Update employee user phone as well
+      await User.findByIdAndUpdate(employee.employeeUserId, { phone });
+    }
+
+    // Update employee
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+    if (phone) updateData.phone = phone.trim();
+    if (position) updateData.position = position.trim();
+    if (branchId) updateData.branchId = branchId;
+    if (permissions) updateData.permissions = permissions;
+    if (notes !== undefined) updateData.notes = notes.trim();
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      employeeId,
+      updateData,
+      { new: true }
+    ).populate('branchId', 'name');
+
+    // If employee is being deactivated, also deactivate their user account
+    if (isActive === false) {
+      await User.findByIdAndUpdate(employee.employeeUserId, { status: 'suspended' });
+    } else if (isActive === true) {
+      await User.findByIdAndUpdate(employee.employeeUserId, { status: 'active' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Employee updated successfully',
+      employee: {
+        _id: updatedEmployee._id,
+        name: updatedEmployee.name,
+        phone: updatedEmployee.phone,
+        position: updatedEmployee.position,
+        branchId: updatedEmployee.branchId._id,
+        branchName: updatedEmployee.branchId.name,
+        permissions: updatedEmployee.permissions,
+        isActive: updatedEmployee.isActive,
+        hireDate: updatedEmployee.hireDate,
+        notes: updatedEmployee.notes,
+        generatedPassword: updatedEmployee.generatedPassword,
+        createdAt: updatedEmployee.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Update employee error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating employee'
+    });
+  }
+});
+
+// Delete employee
+app.delete('/api/employees/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      message: 'Employee deleted successfully (test mode)'
+    });
+  }
+
+  try {
+    const employeeId = req.params.id;
+
+    // Find employee and verify ownership
+    const employee = await Employee.findOne({
+      _id: employeeId,
+      ownerId: req.user.userId
+    });
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    // Soft delete employee
+    await Employee.findByIdAndUpdate(employeeId, { isActive: false });
+
+    // Deactivate employee user account
+    await User.findByIdAndUpdate(employee.employeeUserId, { status: 'suspended' });
+
+    res.json({
+      success: true,
+      message: 'Employee deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete employee error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting employee'
+    });
+  }
+});
+
+// Get employee by ID
+app.get('/api/employees/:id', authenticateToken, async (req, res) => {
+  // MongoDB ulanmagan bo'lsa test javob qaytarish
+  if (!mongoose.connection.readyState) {
+    return res.json({
+      success: true,
+      employee: {
+        _id: req.params.id,
+        name: 'Ali Valiyev',
+        phone: '+998901234567',
+        position: 'Kassir',
+        branchId: 'test-branch-1',
+        branchName: 'Asosiy filial',
+        permissions: {
+          canAddDebt: true,
+          canEditDebt: false,
+          canDeleteDebt: false,
+          canViewDebts: true,
+          canManagePayments: true,
+          canViewReports: false,
+          canManageCreditors: false
+        },
+        isActive: true,
+        hireDate: new Date(),
+        notes: '',
+        generatedPassword: 'emp123456'
+      }
+    });
+  }
+
+  try {
+    const employeeId = req.params.id;
+
+    const employee = await Employee.findOne({
+      _id: employeeId,
+      ownerId: req.user.userId
+    })
+    .populate('branchId', 'name')
+    .populate('employeeUserId', 'username');
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employee not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      employee: {
+        _id: employee._id,
+        name: employee.name,
+        phone: employee.phone,
+        position: employee.position,
+        branchId: employee.branchId._id,
+        branchName: employee.branchId.name,
+        employeeUsername: employee.employeeUserId.username,
+        permissions: employee.permissions,
+        isActive: employee.isActive,
+        hireDate: employee.hireDate,
+        notes: employee.notes,
+        generatedPassword: employee.generatedPassword,
+        createdAt: employee.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get employee error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching employee'
+    });
+  }
 });

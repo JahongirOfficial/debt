@@ -19,12 +19,14 @@ export const DebtProvider = ({ children }) => {
 
   // Fetch debts from backend (with loading state for initial load)
   const fetchDebts = async () => {
-    if (!user || !activeBranch) return;
+    if (!user) return;
+    // For employees, activeBranch is not required
+    if (user.role !== 'employee' && !activeBranch) return;
     
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
+      const response = await apiFetch(`/debts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -34,6 +36,13 @@ export const DebtProvider = ({ children }) => {
       const data = await response.json();
       
       if (data.success) {
+        console.log('DebtContext: Fetched debts:', data.debts.length);
+        console.log('User role:', user?.role);
+        console.log('Assigned branch:', user?.assignedBranchId);
+        if (user?.role === 'employee') {
+          const branchDebts = data.debts.filter(debt => debt.branchId === user.assignedBranchId);
+          console.log('Employee branch debts:', branchDebts.length);
+        }
         setDebts(data.debts);
         setUserTier(data.userTier || 'free');
         setDebtLimit(data.debtLimit || 20);
@@ -50,11 +59,13 @@ export const DebtProvider = ({ children }) => {
 
   // Refresh debts without loading state (for updates after CRUD operations)
   const refreshDebts = async () => {
-    if (!user || !activeBranch) return;
+    if (!user) return;
+    // For employees, activeBranch is not required
+    if (user.role !== 'employee' && !activeBranch) return;
     
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
+      const response = await apiFetch(`/debts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -136,17 +147,30 @@ export const DebtProvider = ({ children }) => {
 
   // Create a new debt
   const createDebt = async (debtData) => {
-    if (!user || !activeBranch) return { success: false, message: 'User not authenticated or no active branch' };
+    if (!user) return { success: false, message: 'User not authenticated' };
+    
+    // For employees, use their assigned branch; for regular users, use active branch
+    let branchId;
+    if (user.role === 'employee' && user.assignedBranchId) {
+      branchId = user.assignedBranchId;
+    } else if (activeBranch) {
+      branchId = activeBranch._id;
+    } else {
+      return { success: false, message: 'No active branch selected' };
+    }
     
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch(`/branches/${activeBranch._id}/debts`, {
+      const response = await apiFetch(`/debts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(debtData),
+        body: JSON.stringify({
+          ...debtData,
+          branchId: branchId
+        }),
       });
       
       const data = await response.json();
@@ -302,7 +326,7 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await apiFetch(`/debts/${id}/pay`, {
+      const response = await apiFetch(`/debts/${id}/paid`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -394,16 +418,20 @@ export const DebtProvider = ({ children }) => {
 
   // Fetch debts and ratings when user is authenticated and branch is active
   useEffect(() => {
-    if (user && !authLoading && activeBranch) {
-      fetchDebts();
-      fetchRatings();
+    if (user && !authLoading) {
+      // For employees, fetch debts immediately (they don't need activeBranch)
+      // For regular users, wait for activeBranch
+      if (user.role === 'employee' || activeBranch) {
+        fetchDebts();
+        fetchRatings();
+      }
     } else if (!user && !authLoading) {
       // Clear debts and ratings when user logs out
       setDebts([]);
       setRatings([]);
       setLoading(false);
-    } else if (user && !activeBranch) {
-      // Clear debts when no active branch
+    } else if (user && user.role !== 'employee' && !activeBranch) {
+      // Clear debts when no active branch (only for non-employees)
       setDebts([]);
       setLoading(false);
     }

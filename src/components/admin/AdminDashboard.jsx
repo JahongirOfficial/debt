@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../../utils/api';
 
+
 export function AdminDashboard() {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -206,6 +207,8 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+
+
 
       {/* Quick Actions */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-6">

@@ -2,6 +2,7 @@ import { formatPhoneNumber, formatCurrency } from '../../utils/debtUtils';
 import { useTranslation } from '../../utils/translationUtils';
 import { useStoredState } from '../../utils/storageUtils';
 import { useBranches } from '../../utils/BranchContext';
+import { useAuth } from '../../utils/AuthContext';
 
 export function DebtCard({
     debt,
@@ -15,10 +16,21 @@ export function DebtCard({
     const [language] = useStoredState('qarzdaftar_language', 'uz');
     const [currency] = useStoredState('qarzdaftar_currency', 'UZS');
     const { branches } = useBranches();
+    const { user } = useAuth();
     const t = useTranslation(language);
 
     // Get branch info if debt has branchId
     const debtBranch = debt.branchId ? branches.find(b => b._id === debt.branchId) : null;
+
+    // Check employee permissions
+    const hasPermission = (permission) => {
+        if (user?.role !== 'employee') return true;
+        return user?.employeeInfo?.permissions?.[permission] || false;
+    };
+
+    const canEdit = hasPermission('canEditDebt');
+    const canDelete = hasPermission('canDeleteDebt');
+    const canManagePayments = hasPermission('canManagePayments');
 
     return (
         <div
@@ -106,10 +118,15 @@ export function DebtCard({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onAdjustClick(debt, 'add');
+                                if (canEdit) onAdjustClick(debt, 'add');
                             }}
-                            className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg hover:scale-110"
-                            title="Qo'shish"
+                            disabled={!canEdit}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md ${
+                                canEdit 
+                                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hover:shadow-lg hover:scale-110 cursor-pointer'
+                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50'
+                            }`}
+                            title={canEdit ? "Qo'shish" : "Ruxsat yo'q"}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -120,10 +137,15 @@ export function DebtCard({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onAdjustClick(debt, 'subtract');
+                                if (canEdit) onAdjustClick(debt, 'subtract');
                             }}
-                            className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg hover:scale-110"
-                            title="Ayirish"
+                            disabled={!canEdit}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md ${
+                                canEdit 
+                                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white hover:shadow-lg hover:scale-110 cursor-pointer'
+                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50'
+                            }`}
+                            title={canEdit ? "Ayirish" : "Ruxsat yo'q"}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
@@ -134,10 +156,15 @@ export function DebtCard({
                         <button
                             onClick={async (e) => {
                                 e.stopPropagation();
-                                await onMarkAsPaid(debt._id);
+                                if (canManagePayments) await onMarkAsPaid(debt._id);
                             }}
-                            className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-full flex items-center justify-center transition-all shadow-md hover:shadow-lg hover:scale-110"
-                            title="To'landi"
+                            disabled={!canManagePayments}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md ${
+                                canManagePayments 
+                                    ? 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white hover:shadow-lg hover:scale-110 cursor-pointer'
+                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50'
+                            }`}
+                            title={canManagePayments ? "To'landi" : "Ruxsat yo'q"}
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

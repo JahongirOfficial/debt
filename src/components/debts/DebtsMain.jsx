@@ -4,6 +4,7 @@ import { useStoredState } from '../../utils/storageUtils';
 import { useTranslation } from '../../utils/translationUtils';
 import { useDebts } from '../../utils/DebtContext';
 import { useBranches } from '../../utils/BranchContext';
+import { useAuth } from '../../utils/AuthContext';
 
 import { useToast } from '../../utils/ToastContext';
 import { SkeletonLoader } from '../SkeletonLoader';
@@ -23,6 +24,15 @@ export function QarzdaftarDebts() {
   const t = useTranslation(language);
   const { debts, loading, error, userTier, debtLimit, createDebt, updateDebt, markDebtAsPaid, adjustDebtAmount, deleteDebt, fetchDebtHistory } = useDebts();
   const { activeBranch } = useBranches();
+  const { user } = useAuth();
+
+  // Check employee permissions
+  const hasPermission = (permission) => {
+    if (user?.role !== 'employee') return true;
+    return user?.employeeInfo?.permissions?.[permission] || false;
+  };
+
+  const canAddDebt = hasPermission('canAddDebt');
   const { showSuccess, showError } = useToast();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -34,20 +44,16 @@ export function QarzdaftarDebts() {
   const [adjustType, setAdjustType] = useState('add');
   const [activeTab, setActiveTab] = useState('dueToday');
   const [debtSearch, setDebtSearch] = useState('');
-  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
 
-  // Timer for suggestion modal (every 3 minutes)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setShowSuggestionModal(true);
-    }, 3 * 60 * 1000); // 3 minutes in milliseconds
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Filter debts based on current filters and active tab
   const getFilteredDebts = () => {
     let filteredDebts = debts;
+
+    // For employees, filter debts by their assigned branch
+    if (user?.role === 'employee' && user?.assignedBranchId) {
+      filteredDebts = filteredDebts.filter(debt => debt.branchId === user.assignedBranchId);
+    }
 
     // Filter by status (tab)
     if (activeTab === 'dueToday') {
@@ -321,8 +327,14 @@ export function QarzdaftarDebts() {
           </div>
 
           <button
-            onClick={() => setShowAddForm(true)}
-            className="group relative bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white p-4 rounded-2xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+            onClick={() => canAddDebt && setShowAddForm(true)}
+            disabled={!canAddDebt}
+            className={`group relative p-4 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 ${
+              canAddDebt 
+                ? 'bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 hover:from-orange-600 hover:via-red-600 hover:to-pink-600 text-white hover:shadow-2xl transform hover:scale-105 hover:-translate-y-1 cursor-pointer'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-50'
+            }`}
+            title={canAddDebt ? "Qarz qo'shish" : "Ruxsat yo'q"}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
             <svg xmlns="http://www.w3.org/2000/svg" className="relative h-6 w-6 transform group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -425,89 +437,7 @@ export function QarzdaftarDebts() {
         onSave={handleSaveAdjustment}
       />
 
-      {/* Suggestion Modal */}
-      {showSuggestionModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 scale-100">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">
-                    💡 Taklifingiz bormi?
-                  </h3>
-                  <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                    by opscoder
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowSuggestionModal(false)}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
 
-              <div className="mb-6">
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Ilovamizni yaxshilash uchun fikr va takliflaringizni yuboring!
-                </p>
-
-                <div className="space-y-3">
-                  {/* Telegram Contact */}
-                  <div className="flex items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="mr-3 p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">Telegram</p>
-                      <a href="https://t.me/opscoder" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
-                        @opscoder
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Phone Contact */}
-                  <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="mr-3 p-2 bg-green-100 dark:bg-green-800 rounded-full">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white text-sm">Telefon</p>
-                      <a href="tel:+998773109828" className="text-green-600 dark:text-green-400 hover:underline text-sm">
-                        +998 77 310 98 28
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowSuggestionModal(false)}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition-colors duration-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white"
-                >
-                  Keyinroq
-                </button>
-                <a
-                  href="https://t.me/opscoder"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setShowSuggestionModal(false)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-300"
-                >
-                  Taklif yuborish
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
