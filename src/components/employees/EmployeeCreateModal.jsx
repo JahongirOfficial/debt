@@ -79,15 +79,15 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className={`w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col ${settings.theme === 'dark'
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
+      <div className={`w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[95vh] sm:max-h-[90vh] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col ${settings.theme === 'dark'
         ? 'bg-slate-800 border border-slate-700'
         : 'bg-white border border-gray-200'
         }`}>
 
         {/* Fixed Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
-          <h2 className={`text-lg font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+          <h2 className={`text-base sm:text-lg font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
             Yangi xodim qo'shish
           </h2>
           <button
@@ -104,25 +104,25 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
         <div className="flex-1 overflow-y-auto">
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-5">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {/* Left Column - Basic Info */}
-              <div className="space-y-5">
-                <h3 className={`text-base font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
+              <div className="space-y-4 sm:space-y-5">
+                <h3 className={`text-sm sm:text-base font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
                   Asosiy ma'lumotlar
                 </h3>
 
                 {/* Basic Info Grid */}
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2 sm:gap-3">
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-1 sm:mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                       Ism *
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
                         ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                         } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -132,14 +132,14 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-1 sm:mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                       Telefon *
                     </label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
                         ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                         } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -149,14 +149,14 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-1 sm:mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                       Lavozim
                     </label>
                     <input
                       type="text"
                       value={formData.position}
                       onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
                         ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                         } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -165,13 +165,13 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    <label className={`block text-sm font-medium mb-1 sm:mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                       Filial *
                     </label>
                     <select
                       value={formData.branchId}
                       onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
                         ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                         } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -191,12 +191,12 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
               </div>
 
               {/* Right Column - Permissions */}
-              <div className="space-y-5">
-                <h3 className={`text-base font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
+              <div className="space-y-4 sm:space-y-5">
+                <h3 className={`text-sm sm:text-base font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
                   Ruxsatlar
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2">
                   {Object.entries({
                     canAddDebt: 'Qarz qo\'shish',
                     canEditDebt: 'Qarzni tahrirlash',
@@ -206,7 +206,7 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
                     canViewReports: 'Hisobotlarni ko\'rish',
                     canManageCreditors: 'Kreditorlarni boshqarish'
                   }).map(([key, label]) => (
-                    <label key={key} className={`flex items-start space-x-2.5 cursor-pointer p-2.5 rounded-lg transition-colors ${settings.theme === 'dark'
+                    <label key={key} className={`flex items-start space-x-2 sm:space-x-2.5 cursor-pointer p-2 sm:p-2.5 rounded-lg transition-colors ${settings.theme === 'dark'
                       ? 'hover:bg-slate-700/50'
                       : 'hover:bg-gray-50'
                       }`}>
@@ -217,7 +217,7 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <span className={`text-sm font-medium block ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                        <span className={`text-xs sm:text-sm font-medium block ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                           {label}
                         </span>
                         <p className={`text-xs mt-0.5 leading-tight ${settings.theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
@@ -239,11 +239,11 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
         </div>
 
         {/* Fixed Footer Actions */}
-        <div className="flex justify-end space-x-3 px-5 py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className={`px-5 py-2 rounded-lg font-medium transition-colors ${settings.theme === 'dark'
+            className={`px-4 sm:px-5 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base ${settings.theme === 'dark'
               ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -254,7 +254,7 @@ export function EmployeeCreateModal({ isOpen, onClose, onEmployeeCreated, branch
             type="submit"
             disabled={loading}
             onClick={handleSubmit}
-            className="px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 sm:px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             {loading ? 'Qo\'shilmoqda...' : 'Xodim qo\'shish'}
           </button>

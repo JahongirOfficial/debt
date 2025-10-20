@@ -6,6 +6,10 @@ export function BusinessOwnersSection() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTier, setFilterTier] = useState('all');
+  const [selectedOwner, setSelectedOwner] = useState(null);
+  const [ownerDebts, setOwnerDebts] = useState([]);
+  const [debtsLoading, setDebtsLoading] = useState(false);
+  const [showDebtsModal, setShowDebtsModal] = useState(false);
 
   useEffect(() => {
     fetchBusinessOwners();
@@ -56,6 +60,51 @@ export function BusinessOwnersSection() {
       case 'lite': return '🌟';
       case 'free': return '👤';
       default: return '👤';
+    }
+  };
+
+  const handleViewDebts = async (ownerId) => {
+    try {
+      setDebtsLoading(true);
+      setShowDebtsModal(true);
+      
+      const owner = businessOwners.find(o => o._id === ownerId);
+      setSelectedOwner(owner);
+
+      const response = await apiFetch(`/admin/business-owner-debts/${ownerId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOwnerDebts(data.debts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching owner debts:', error);
+    } finally {
+      setDebtsLoading(false);
+    }
+  };
+
+  const formatAmount = (amount) => {
+    if (!amount || isNaN(amount)) return '0';
+    return Number(amount).toLocaleString('uz-UZ');
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Sana yo\'q';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Noto\'g\'ri sana';
+      return date.toLocaleDateString('uz-UZ', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    } catch (error) {
+      return 'Noto\'g\'ri sana';
     }
   };
 
@@ -218,6 +267,15 @@ export function BusinessOwnersSection() {
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => handleViewDebts(owner._id)}
+                    className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg transition-colors"
+                    title="Qarzlarni ko'rish"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </button>
                   <button className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -264,6 +322,164 @@ export function BusinessOwnersSection() {
               </div>
               <div className="text-sm text-gray-500 dark:text-gray-400">Pro</div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Debts Modal */}
+      {showDebtsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {selectedOwner?.username} - Qarzlar ro'yxati
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Tarif: <span className="font-medium">{selectedOwner?.subscriptionTier?.toUpperCase()}</span>
+                  {selectedOwner?.limits?.debts !== 'Cheksiz' && (
+                    <span className="ml-2">
+                      Limit: {selectedOwner?.usage?.debts || 0}/{selectedOwner?.limits?.debts}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDebtsModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {debtsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : ownerDebts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          #
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Qarzdor
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Miqdor
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Muddat
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          Holat
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {ownerDebts.map((debt) => (
+                        <tr 
+                          key={debt._id} 
+                          className={`${debt.isOverLimit 
+                            ? 'opacity-50 bg-gray-100 dark:bg-gray-700' 
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                          } transition-colors duration-150`}
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <span className={`text-sm font-medium ${debt.isOverLimit 
+                                ? 'text-red-600 dark:text-red-400' 
+                                : 'text-gray-900 dark:text-white'
+                              }`}>
+                                {debt.debtIndex}
+                              </span>
+                              {debt.isOverLimit && (
+                                <span className="ml-2 text-red-500" title="Limitdan oshgan">⚠️</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm font-medium ${debt.isOverLimit 
+                              ? 'text-gray-500 dark:text-gray-400' 
+                              : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {debt.debtorName || 'Noma\'lum'}
+                            </div>
+                            <div className={`text-sm ${debt.isOverLimit 
+                              ? 'text-gray-400 dark:text-gray-500' 
+                              : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {debt.debtorPhone || 'Telefon yo\'q'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm font-medium ${debt.isOverLimit 
+                              ? 'text-gray-500 dark:text-gray-400' 
+                              : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {formatAmount(debt.amount)} UZS
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className={`text-sm ${debt.isOverLimit 
+                              ? 'text-gray-500 dark:text-gray-400' 
+                              : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {formatDate(debt.dueDate)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              debt.isOverLimit 
+                                ? 'bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-400' 
+                                : debt.status === 'active' 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                            }`}>
+                              {debt.isOverLimit ? 'Limitdan tashqari' : (debt.status === 'active' ? 'Faol' : 'Kutilmoqda')}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Qarzlar topilmadi
+                  </h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Bu biznes egasining hozircha qarzlari yo'q
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {ownerDebts.length > 0 && (
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-gray-600 dark:text-gray-400">
+                    Jami qarzlar: <span className="font-medium">{ownerDebts.length}</span>
+                  </div>
+                  <div className="text-gray-600 dark:text-gray-400">
+                    Limitdan tashqari: <span className="font-medium text-red-600 dark:text-red-400">
+                      {ownerDebts.filter(d => d.isOverLimit).length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

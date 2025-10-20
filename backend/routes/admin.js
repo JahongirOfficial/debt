@@ -306,9 +306,10 @@ router.get('/all-employees', authenticateAdmin, async (req, res) => {
 
 // Subscription limits
 const SUBSCRIPTION_LIMITS = {
-  free: { debts: 10, employees: 2, branches: 1 },
-  standard: { debts: 50, employees: 5, branches: 3 },
-  pro: { debts: 200, employees: 15, branches: 10 },
+  free: { debts: 20, employees: 2, branches: 1 },
+  lite: { debts: 70, employees: 3, branches: 2 },
+  standard: { debts: 150, employees: 5, branches: 3 },
+  pro: { debts: -1, employees: 15, branches: 10 }, // unlimited debts
   enterprise: { debts: -1, employees: -1, branches: -1 } // unlimited
 };
 
@@ -339,7 +340,7 @@ router.get('/all-debts', authenticateAdmin, async (req, res) => {
           subscriptionTier: 'pro',
           isOverLimit: false,
           debtIndex: 1,
-          debtLimit: 200
+          debtLimit: -1
         },
         {
           id: 'test-debt-2',
@@ -377,9 +378,9 @@ router.get('/all-debts', authenticateAdmin, async (req, res) => {
             phone: '+998903456789'
           },
           subscriptionTier: 'free',
-          isOverLimit: true, // Free tarif - 10 dan ortiq
-          debtIndex: 12,
-          debtLimit: 10
+          isOverLimit: true, // Free tarif - 20 dan ortiq
+          debtIndex: 22,
+          debtLimit: 20
         },
         {
           id: 'test-debt-4',
@@ -397,9 +398,9 @@ router.get('/all-debts', authenticateAdmin, async (req, res) => {
             phone: '+998904567890'
           },
           subscriptionTier: 'standard',
-          isOverLimit: true, // Standard tarif - 50 dan ortiq
-          debtIndex: 52,
-          debtLimit: 50
+          isOverLimit: true, // Standard tarif - 150 dan ortiq
+          debtIndex: 152,
+          debtLimit: 150
         },
         {
           id: 'test-debt-5',
@@ -419,7 +420,7 @@ router.get('/all-debts', authenticateAdmin, async (req, res) => {
           subscriptionTier: 'pro',
           isOverLimit: false,
           debtIndex: 45,
-          debtLimit: 200
+          debtLimit: -1
         },
         {
           id: 'test-debt-6',
@@ -437,9 +438,9 @@ router.get('/all-debts', authenticateAdmin, async (req, res) => {
             phone: '+998906789012'
           },
           subscriptionTier: 'free',
-          isOverLimit: true, // Free tarif - 10 dan ortiq
-          debtIndex: 11,
-          debtLimit: 10
+          isOverLimit: true, // Free tarif - 20 dan ortiq
+          debtIndex: 21,
+          debtLimit: 20
         },
         // Qo'shimcha test ma'lumotlari - aniq kunlar uchun
         {
@@ -689,6 +690,121 @@ router.get('/sms-reminders', authenticateAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching SMS reminders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Get business owner debts with limit checking
+router.get('/business-owner-debts/:ownerId', authenticateAdmin, async (req, res) => {
+  const models = getModels();
+  const { ownerId } = req.params;
+  
+  // Test mode response
+  if (!models) {
+    const testDebts = [
+      {
+        _id: 'debt-1',
+        debtorName: 'Ahmad Valiyev',
+        debtorPhone: '+998901234567',
+        amount: 1500000,
+        dueDate: new Date('2025-10-25'),
+        status: 'active',
+        createdAt: new Date(),
+        isOverLimit: false,
+        debtIndex: 1
+      },
+      {
+        _id: 'debt-2',
+        debtorName: 'Bobur Toshev',
+        debtorPhone: '+998902345678',
+        amount: 2500000,
+        dueDate: new Date('2025-10-30'),
+        status: 'active',
+        createdAt: new Date(),
+        isOverLimit: false,
+        debtIndex: 2
+      },
+      // Limitdan oshgan qarzlar (xira holatda)
+      {
+        _id: 'debt-21',
+        debtorName: 'Limitdan oshgan qarz 1',
+        debtorPhone: '+998903456789',
+        amount: 800000,
+        dueDate: new Date('2025-11-01'),
+        status: 'active',
+        createdAt: new Date(),
+        isOverLimit: true,
+        debtIndex: 21
+      },
+      {
+        _id: 'debt-22',
+        debtorName: 'Limitdan oshgan qarz 2',
+        debtorPhone: '+998904567890',
+        amount: 1200000,
+        dueDate: new Date('2025-11-05'),
+        status: 'active',
+        createdAt: new Date(),
+        isOverLimit: true,
+        debtIndex: 22
+      }
+    ];
+
+    return res.json({
+      success: true,
+      debts: testDebts,
+      owner: {
+        _id: ownerId,
+        username: 'Test Owner',
+        subscriptionTier: 'free',
+        limits: { debts: 20 }
+      }
+    });
+  }
+
+  try {
+    // Get business owner
+    const owner = await models.User.findById(ownerId).select('username subscriptionTier');
+    if (!owner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Business owner not found'
+      });
+    }
+
+    const subscriptionTier = owner.subscriptionTier || 'free';
+    const limits = SUBSCRIPTION_LIMITS[subscriptionTier] || SUBSCRIPTION_LIMITS.free;
+
+    // Get all debts for this owner
+    const debts = await models.Debt.find({ userId: ownerId })
+      .sort({ createdAt: 1 }); // Sort by creation date to maintain order
+
+    // Mark debts that are over limit
+    const debtsWithLimitInfo = debts.map((debt, index) => {
+      const isOverLimit = limits.debts !== -1 && index >= limits.debts;
+      
+      return {
+        ...debt.toObject(),
+        isOverLimit,
+        debtIndex: index + 1,
+        debtLimit: limits.debts
+      };
+    });
+
+    res.json({
+      success: true,
+      debts: debtsWithLimitInfo,
+      owner: {
+        _id: owner._id,
+        username: owner.username,
+        subscriptionTier: subscriptionTier,
+        limits: limits
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching business owner debts:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

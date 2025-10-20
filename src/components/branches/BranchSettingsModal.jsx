@@ -174,15 +174,15 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
   if (!isOpen || !branch) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className={`w-full max-w-4xl rounded-2xl shadow-2xl ${
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className={`w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto rounded-xl sm:rounded-2xl shadow-2xl ${
         settings.theme === 'dark' 
           ? 'bg-gray-800 border border-gray-700' 
           : 'bg-white border border-gray-200'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className={`text-xl font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className={`text-lg sm:text-xl font-bold ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
             Filial sozlamalari
           </h2>
           <button
@@ -201,7 +201,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
 
         {/* Delete Confirmation */}
         {showDeleteConfirm && (
-          <div className="p-4 mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="p-3 sm:p-4 mx-4 sm:mx-6 mt-3 sm:mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="flex items-start space-x-3">
               <svg className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -233,10 +233,10 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Left Column - Basic Info */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Branch Name */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${settings.theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -247,7 +247,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Masalan: Markaziy filial"
-                  className={`w-full px-4 py-3 rounded-lg border transition-colors ${
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border transition-colors ${
                     errors.name
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
@@ -272,7 +272,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Filial haqida qisqacha ma'lumot..."
                   rows={3}
-                  className={`w-full px-4 py-3 rounded-lg border transition-colors ${
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border transition-colors ${
                     errors.description
                       ? 'border-red-500 focus:ring-red-500'
                       : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
@@ -295,7 +295,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
                 <select
                   value={formData.currency}
                   onChange={(e) => handleInputChange('currency', e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                     settings.theme === 'dark'
                       ? 'bg-gray-700 text-white'
                       : 'bg-white text-gray-900'
@@ -311,27 +311,27 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
             </div>
 
             {/* Right Column - Appearance */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Color Selection */}
               <div>
                 <label className={`block text-sm font-medium mb-3 ${settings.theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                   Filial rangi
                 </label>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 sm:gap-3">
                   {BRANCH_COLORS.map(color => (
                     <button
                       key={color}
                       type="button"
                       onClick={() => handleInputChange('color', color)}
-                      className={`w-12 h-12 rounded-lg transition-all duration-200 ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg transition-all duration-200 ${
                         formData.color === color
-                          ? 'ring-4 ring-blue-500 ring-opacity-50 scale-110'
+                          ? 'ring-2 sm:ring-4 ring-blue-500 ring-opacity-50 scale-105 sm:scale-110'
                           : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: color }}
                     >
                       {formData.color === color && (
-                        <svg className="w-6 h-6 text-white mx-auto" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white mx-auto" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
@@ -345,13 +345,13 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
                 <label className={`block text-sm font-medium mb-3 ${settings.theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
                   Filial belgisi
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {BRANCH_ICONS.map(icon => (
                     <button
                       key={icon.name}
                       type="button"
                       onClick={() => handleInputChange('icon', icon.name)}
-                      className={`flex flex-col items-center space-y-2 p-3 rounded-lg border-2 transition-all duration-200 ${
+                      className={`flex flex-col items-center space-y-1 sm:space-y-2 p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 ${
                         formData.icon === icon.name
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : settings.theme === 'dark'
@@ -360,7 +360,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
                       }`}
                     >
                       <div 
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-white"
                         style={{ backgroundColor: formData.color }}
                       >
                         {getBranchIcon(icon.name)}
@@ -382,11 +382,11 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
           {/* Action Buttons */}
           <div className="flex flex-col space-y-3 pt-4">
             {/* Save and Cancel */}
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 type="button"
                 onClick={onClose}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                   settings.theme === 'dark'
                     ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                     : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -397,7 +397,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
               <button
                 type="submit"
                 disabled={isSubmitting || loading}
-                className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                className={`flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
                   isSubmitting || loading
                     ? 'bg-gray-400 cursor-not-allowed text-white'
                     : 'bg-blue-600 hover:bg-blue-700 text-white'
@@ -419,7 +419,7 @@ export function BranchSettingsModal({ isOpen, branch, onClose, onSuccess, onDele
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
-                className="w-full px-4 py-3 rounded-lg font-medium transition-colors bg-red-600 hover:bg-red-700 text-white"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base bg-red-600 hover:bg-red-700 text-white"
               >
                 Filialni o'chirish
               </button>

@@ -125,22 +125,22 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
     if (!isOpen || !employee) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className={`w-full max-w-5xl max-h-[95vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden ${settings.theme === 'dark'
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm">
+            <div className={`w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-5xl max-h-[95vh] rounded-xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden ${settings.theme === 'dark'
                 ? 'bg-slate-800 border border-slate-700'
                 : 'bg-white border border-gray-200'
                 }`}>
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
-                    <h2 className={`text-xl font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
+                <div className="flex items-center justify-between p-3 sm:p-4 lg:p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 className={`text-lg sm:text-xl font-bold ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>
                         Xodimni tahrirlash
                     </h2>
                     <button
                         onClick={onClose}
                         className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
@@ -148,15 +148,15 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
 
                 {/* Form */}
                 <div className="flex-1 overflow-y-auto">
-                    <form id="employee-edit-form" onSubmit={handleSubmit} className="p-4 sm:p-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                    <form id="employee-edit-form" onSubmit={handleSubmit} className="p-3 sm:p-4 lg:p-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                             {/* Left Column - Basic Info */}
-                            <div className="space-y-4 sm:space-y-6">
-                                <h3 className={`text-lg font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
+                            <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                                <h3 className={`text-base sm:text-lg font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
                                     Asosiy ma'lumotlar
                                 </h3>
 
-                                <div className="space-y-3 sm:space-y-4">
+                                <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                                     <div>
                                         <label className={`block text-sm font-medium mb-1 sm:mb-2 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                                             Ism *
@@ -165,7 +165,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                                             type="text"
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors text-sm sm:text-base ${settings.theme === 'dark'
                                                 ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                                                 : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                                                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -182,7 +182,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors text-sm sm:text-base ${settings.theme === 'dark'
                                                 ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                                                 : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                                                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -199,7 +199,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                                             type="text"
                                             value={formData.position}
                                             onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors text-sm sm:text-base ${settings.theme === 'dark'
                                                 ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                                                 : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                                                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -214,7 +214,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                                         <select
                                             value={formData.branchId}
                                             onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
-                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors ${settings.theme === 'dark'
+                                            className={`w-full px-3 py-2 sm:px-4 sm:py-2.5 rounded-lg border transition-colors text-sm sm:text-base ${settings.theme === 'dark'
                                                 ? 'bg-slate-700 border-slate-600 text-slate-100 focus:border-blue-500'
                                                 : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500'
                                                 } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
@@ -247,15 +247,15 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                             </div>
 
                             {/* Right Column - Permissions */}
-                            <div className="space-y-4 sm:space-y-6">
-                                <h3 className={`text-lg font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
+                            <div className="space-y-3 sm:space-y-4 lg:space-y-6">
+                                <h3 className={`text-base sm:text-lg font-semibold ${settings.theme === 'dark' ? 'text-slate-200' : 'text-gray-800'}`}>
                                     Ruxsatlar
                                 </h3>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                                     {/* Qarz boshqaruvi */}
                                     <div className="space-y-2">
-                                        <h4 className={`text-sm font-semibold mb-3 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                                        <h4 className={`text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                                             Qarz boshqaruvi
                                         </h4>
                                         {Object.entries({
@@ -283,7 +283,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
 
                                     {/* Boshqa ruxsatlar */}
                                     <div className="space-y-2">
-                                        <h4 className={`text-sm font-semibold mb-3 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                                        <h4 className={`text-xs sm:text-sm font-semibold mb-2 sm:mb-3 ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                                             Boshqa ruxsatlar
                                         </h4>
                                         {Object.entries({
@@ -314,12 +314,12 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                 </div>
 
                 {/* Fixed Actions Footer */}
-                <div className="flex justify-end items-center p-4 sm:p-6 border-t border-gray-200 dark:border-slate-700 space-x-3 flex-shrink-0 bg-gray-50 dark:bg-slate-800/50">
+                <div className="flex flex-col sm:flex-row justify-end items-center p-3 sm:p-4 lg:p-6 border-t border-gray-200 dark:border-slate-700 space-y-2 sm:space-y-0 sm:space-x-3 flex-shrink-0 bg-gray-50 dark:bg-slate-800/50">
                     <button
                         type="button"
                         onClick={onClose}
                         disabled={loading}
-                        className={`px-4 py-2 sm:px-6 sm:py-2.5 rounded-lg font-medium transition-colors text-sm sm:text-base ${settings.theme === 'dark'
+                        className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-colors text-sm sm:text-base ${settings.theme === 'dark'
                             ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 disabled:opacity-50'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50'
                             } disabled:cursor-not-allowed`}
@@ -331,7 +331,7 @@ export function EmployeeEditModal({ isOpen, onClose, onEmployeeUpdated, employee
                         type="submit"
                         form="employee-edit-form"
                         disabled={loading || !formData.name.trim() || !formData.phone.trim() || !formData.branchId || !hasChanges}
-                        className={`px-4 py-2 sm:px-8 sm:py-2.5 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base ${hasChanges && !loading
+                        className={`px-3 sm:px-4 lg:px-8 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl text-sm sm:text-base ${hasChanges && !loading
                                 ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
                                 : 'bg-gray-300 text-gray-500 dark:bg-gray-600 dark:text-gray-400'
                             }`}
