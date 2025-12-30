@@ -143,7 +143,7 @@ export function QarzdaftarDashboard() {
             <div className="mb-4 md:mb-0">
               <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${settings.theme === 'dark' ? 'text-slate-100' : 'text-gray-900'
                 }`}>
-                {getGreeting()}, {user?.username || 'Foydalanuvchi'}! 👋
+                {getGreeting()}, {user?.name || user?.username || 'Foydalanuvchi'}! 👋
               </h1>
               <p className={`text-lg hidden md:block ${settings.theme === 'dark' ? 'text-slate-300' : 'text-gray-600'
                 }`}>

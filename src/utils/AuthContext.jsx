@@ -285,11 +285,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function
-  const register = async (username, fullPhoneNumber, password) => {
+  const register = async (name, fullPhoneNumber, password) => {
     // If backend is not available, simulate registration with validation
     if (!backendAvailable) {
       // Validate input
-      if (!username || !fullPhoneNumber || !password) {
+      if (!name || !fullPhoneNumber || !password) {
         return { success: false, message: 'All fields are required' };
       }
       
@@ -302,27 +302,8 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: 'Phone number must start with country code (e.g., +998)' };
       }
       
-      // For demo purposes, we'll accept a specific test account
-      if (username === 'testuser' && fullPhoneNumber === '+998901234567' && password === 'password123') {
-        // Create a mock user for the test account
-        const mockUser = {
-          id: 'test-user-id',
-          username: 'testuser',
-          phone: '+998901234567',
-          subscriptionTier: 'free',
-          avatarColor: 'bg-gradient-to-br from-blue-500 to-indigo-500',
-          role: 'user'
-        };
-        
-        localStorage.setItem('token', 'test-token');
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        setUser(mockUser);
-        
-        return { success: true, user: mockUser };
-      } else {
-        // Don't allow registration of other accounts in test mode
-        return { success: false, message: 'Registration is disabled in test mode. Use +998901234567 / password123 to login.' };
-      }
+      // Don't allow registration in test mode
+      return { success: false, message: 'Registration is disabled in test mode.' };
     }
     
     try {
@@ -336,7 +317,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, phone: fullPhoneNumber, password }),
+        body: JSON.stringify({ name, phone: fullPhoneNumber, password }),
       });
 
       // Clone the response to avoid "body stream already read" error
@@ -373,6 +354,43 @@ export const AuthProvider = ({ children }) => {
     document.documentElement.classList.remove('dark');
   };
 
+  // Update user profile (name)
+  const updateProfile = async (profileData) => {
+    if (!backendAvailable) {
+      // Update local user data
+      const updatedUser = { ...user, ...profileData };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return { success: true, user: updatedUser };
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await apiFetch('/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedUser = { ...user, ...data.user };
+        setUser(updatedUser);
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        return { success: true, user: updatedUser };
+      } else {
+        return { success: false, message: data.message };
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return { success: false, message: 'Network error while updating profile' };
+    }
+  };
+
   // Context value
   const value = {
     user,
@@ -382,7 +400,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateUserSettings
+    updateUserSettings,
+    updateProfile
   };
 
   return (

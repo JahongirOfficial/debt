@@ -51,8 +51,7 @@ export function QarzdaftarPricingPlans() {
       features: [
         t('pricing.free.feature1', '20 ta qarzni boshqarish'),
         t('pricing.free.feature2', 'Texnik qo\'llab-quvvatlash'),
-        t('pricing.free.feature4', 'Telegram eslatmalar'),
-        t('pricing.free.feature5', 'SMS xabar xizmati')
+        t('pricing.free.feature4', 'Telegram eslatmalar')
       ],
       oneTimeFeatures: [
         t('pricing.free.feature6', '5 ta AI post dizayn')
@@ -71,8 +70,7 @@ export function QarzdaftarPricingPlans() {
         t('pricing.lite.feature1', '70 ta qarzni boshqarish'),
         t('pricing.lite.feature2', 'Texnik qo\'llab-quvvatlash'),
         t('pricing.lite.feature3', 'Haftalik Excel hisobotlar'),
-        t('pricing.lite.feature4', 'Telegram eslatmalar'),
-        t('pricing.lite.feature5', 'SMS xabar xizmati')
+        t('pricing.lite.feature4', 'Telegram eslatmalar')
       ],
       oneTimeFeatures: [
         t('pricing.lite.feature6', '10 ta AI post dizayn')
@@ -91,8 +89,7 @@ export function QarzdaftarPricingPlans() {
         t('pricing.standard.feature1', '150 ta qarzni boshqarish'),
         t('pricing.standard.feature2', 'Kunlik Excel hisobotlar'),
         t('pricing.standard.feature4', 'Telegram eslatmalar'),
-        t('pricing.standard.feature5', 'Maxsus qo\'llab-quvvatlash'),
-        t('pricing.standard.feature6', 'SMS xabar xizmati')
+        t('pricing.standard.feature5', 'Maxsus qo\'llab-quvvatlash')
       ],
       oneTimeFeatures: [
         t('pricing.standard.feature7', '15 ta AI post dizayn'),
@@ -112,8 +109,7 @@ export function QarzdaftarPricingPlans() {
         t('pricing.pro.feature1', 'Cheksiz qarzni boshqarish'),
         t('pricing.pro.feature3', 'Kunlik Excel hisobotlar'),
         t('pricing.pro.feature4', 'Telegram eslatmalar'),
-        t('pricing.pro.feature5', '24/7 qo\'llab-quvvatlash'),
-        t('pricing.pro.feature6', 'Kengaytirilgan SMS xizmati')
+        t('pricing.pro.feature5', '24/7 qo\'llab-quvvatlash')
       ],
       oneTimeFeatures: [
         t('pricing.pro.feature7', '25 ta AI post dizayn'),

@@ -127,6 +127,8 @@ class TelegramBotHandler {
           await this.handleStats(msg);
         } else if (text === '/all') {
           await this.handleAllDebts(msg);
+        } else if (text === '/send') {
+          await this.handleSendReminders(msg);
         } else if (text.startsWith('/') && !this.isKnownCommand(text)) {
           await this.handleUnknownCommand(msg);
         } else if (!text.startsWith('/')) {
@@ -154,7 +156,7 @@ class TelegramBotHandler {
   }
 
   isKnownCommand(text) {
-    const knownCommands = ['/start', '/help', '/tomorrow', '/today', '/week', '/stats', '/all'];
+    const knownCommands = ['/start', '/help', '/tomorrow', '/today', '/week', '/stats', '/all', '/send'];
     return knownCommands.some(cmd => text.startsWith(cmd));
   }
 
@@ -891,44 +893,56 @@ class TelegramBotHandler {
       const chatId = telegramId;
 
       // Xabar yaratish
-      let message = `🔔 **Eslatma: Ertaga to'lov qilish kerak!**\n\n`;
-      message += `📋 Ertaga muddati tugaydigan qarzlar: ${debts.length} ta\n\n`;
+      let message = `🔔 *Eslatma: Ertaga to'lov qilish kerak!*\n\n`;
+      message += `📋 Ertaga muddati tugaydigan qarzlar: *${debts.length} ta*\n\n`;
+
+      let totalAmount = 0;
+      const currencyTotals = {};
 
       debts.forEach((debt, index) => {
-        message += `${'─'.repeat(40)}\n`;
-        message += `${index + 1}. 👤 ${debt.creditor}\n`;
-        message += `💰 ${debt.amount.toLocaleString()} ${debt.currency}\n`;
+        message += `━━━━━━━━━━━━━━━━━━━━\n`;
+        message += `*${index + 1}. ${debt.creditor}*\n`;
+        message += `💰 Summa: *${debt.amount.toLocaleString()} ${debt.currency}*\n`;
 
-        // Telefon raqamni clickable qilish
+        // Valyuta bo'yicha jami hisoblash
+        if (!currencyTotals[debt.currency]) {
+          currencyTotals[debt.currency] = 0;
+        }
+        currencyTotals[debt.currency] += debt.amount;
+
+        // Telefon raqamni clickable qilish - bosganda qo'ng'iroq qilish
         if (debt.phone && debt.phone !== 'Ko\'rsatilmagan') {
-          // Telefon raqamni to'liq formatda ko'rsatish
           let fullPhone = debt.phone;
-
-          // Agar telefon raqami + bilan boshlanmasa, country code qo'shish
           if (!fullPhone.startsWith('+')) {
             const countryCode = debt.countryCode || '+998';
             fullPhone = countryCode + fullPhone;
           }
-
-          // Telefon raqamni tozalash - faqat raqamlar va + belgisi qoldirish, bo'shliqlarni olib tashlash
           const cleanPhone = fullPhone.replace(/[^\d+]/g, '');
-          message += `📞 [${cleanPhone}](tel:${cleanPhone})\n`;
+          // Telegram'da telefon raqamni bosganda qo'ng'iroq qilish uchun
+          message += `📞 Telefon: [${cleanPhone}](tel:${cleanPhone})\n`;
         } else {
-          message += `📞 Ko'rsatilmagan\n`;
+          message += `📞 Telefon: Ko'rsatilmagan\n`;
         }
 
         message += `📅 Muddat: ${new Date(debt.debtDate).toLocaleDateString('uz-UZ')}\n`;
         if (debt.description) {
-          message += `📄 Izoh: ${debt.description}\n`;
+          message += `📝 Izoh: ${debt.description}\n`;
         }
-        message += `${'─'.repeat(40)}\n\n`;
       });
 
+      // Jami summa
+      message += `━━━━━━━━━━━━━━━━━━━━\n`;
+      message += `\n💵 *Jami to'lanishi kerak:*\n`;
+      for (const [currency, total] of Object.entries(currencyTotals)) {
+        message += `   ${total.toLocaleString()} ${currency}\n`;
+      }
 
+      message += `\n⏰ _Eslatma vaqti: ${new Date().toLocaleTimeString('uz-UZ')}_`;
 
       // Xabarni yuborish
       await this.bot.sendMessage(chatId, message, {
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
       });
 
       console.log(`✅ Tomorrow debts reminder sent to user ${telegramId}`);
@@ -980,6 +994,86 @@ class TelegramBotHandler {
       } catch (error) {
         console.error(`❌ Error cleaning up ${filePath}:`, error);
       }
+    }
+  }
+
+  // Admin uchun /send buyrug'i - barcha userlarga ertaga to'lov eslatmasini yuborish
+  async handleSendReminders(msg) {
+    const chatId = msg.chat.id;
+    const telegramId = msg.from.id.toString();
+    
+    // Faqat admin telegram ID dan ruxsat berish
+    const ADMIN_TELEGRAM_ID = '5027595868';
+    
+    if (telegramId !== ADMIN_TELEGRAM_ID) {
+      await this.bot.sendMessage(chatId, '❌ Bu buyruq faqat admin uchun.');
+      return;
+    }
+
+    try {
+      await this.bot.sendMessage(chatId, '⏳ Barcha foydalanuvchilarga eslatma yuborilmoqda...');
+
+      // Telegram ID si bor barcha foydalanuvchilarni topish
+      const users = await this.models.User.find({
+        telegramId: { $exists: true, $ne: null }
+      });
+
+      if (users.length === 0) {
+        await this.bot.sendMessage(chatId, '⚠️ Telegram bilan bog\'langan foydalanuvchilar topilmadi.');
+        return;
+      }
+
+      // Ertaga sanasi
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+
+      const endOfTomorrow = new Date(tomorrow);
+      endOfTomorrow.setHours(23, 59, 59, 999);
+
+      let sentCount = 0;
+      let skippedCount = 0;
+      let errorCount = 0;
+
+      // Har bir foydalanuvchi uchun
+      for (const user of users) {
+        try {
+          // Foydalanuvchining ertaga to'lov qilishi kerak bo'lgan qarzlarini topish
+          const tomorrowDebts = await this.models.Debt.find({
+            userId: user._id,
+            status: 'pending',
+            debtDate: {
+              $gte: tomorrow,
+              $lte: endOfTomorrow
+            }
+          }).sort({ debtDate: 1 });
+
+          if (tomorrowDebts.length > 0) {
+            // Telegram bot orqali xabar yuborish
+            await this.sendTomorrowDebtsToUser(user.telegramId, tomorrowDebts);
+            sentCount++;
+            console.log(`✅ Reminder sent to: ${user.username} (${tomorrowDebts.length} debts)`);
+          } else {
+            skippedCount++;
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`❌ Error sending to ${user.username}:`, error.message);
+        }
+      }
+
+      // Natija xabari
+      await this.bot.sendMessage(chatId, 
+        `✅ Eslatmalar yuborildi!\n\n` +
+        `📤 Yuborildi: ${sentCount} ta foydalanuvchi\n` +
+        `⏭️ O'tkazib yuborildi (qarz yo'q): ${skippedCount} ta\n` +
+        `❌ Xatolik: ${errorCount} ta\n` +
+        `👥 Jami foydalanuvchilar: ${users.length} ta`
+      );
+
+    } catch (error) {
+      console.error('Error in handleSendReminders:', error);
+      await this.bot.sendMessage(chatId, `❌ Xatolik yuz berdi: ${error.message}`);
     }
   }
 

@@ -194,7 +194,13 @@ const userSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     minlength: 3,
-    maxlength: 30
+    maxlength: 7
+  },
+  name: {
+    type: String,
+    trim: true,
+    maxlength: 50,
+    default: null // Foydalanuvchi ismi (ixtiyoriy)
   },
   phone: {
     type: String,
@@ -1198,11 +1204,22 @@ const authenticateToken = (req, res, next) => {
 app.post('/api/auth/register', async (req, res) => {
   console.log('Registration request received:', req.body);
 
+  // Username generatsiya qilish funksiyasi (7 ta belgi)
+  const generateUsername = () => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let username = '';
+    for (let i = 0; i < 7; i++) {
+      username += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return username;
+  };
+
   // MongoDB ulanmagan bo'lsa test javob qaytarish
   if (!mongoose.connection.readyState) {
     console.log('MongoDB not connected, returning test response');
+    const generatedUsername = generateUsername();
     const testToken = jwt.sign(
-      { userId: 'test-user-id', username: req.body.username || 'testuser', role: 'user' },
+      { userId: 'test-user-id', username: generatedUsername, role: 'user' },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -1212,7 +1229,8 @@ app.post('/api/auth/register', async (req, res) => {
       token: testToken,
       user: {
         id: 'test-user-id',
-        username: req.body.username || 'testuser',
+        username: generatedUsername,
+        name: req.body.name || 'Test User',
         phone: req.body.phone || '+998901234567',
         subscriptionTier: 'free',
         role: 'user',
@@ -1222,12 +1240,12 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   try {
-    const { username, phone, password } = req.body;
-    console.log('Registration data:', { username, phone, password });
+    const { name, phone, password } = req.body;
+    console.log('Registration data:', { name, phone, password });
 
     // Validatsiya
-    if (!username || !phone || !password) {
-      console.log('Validation failed: missing fields', { username, phone, password });
+    if (!name || !phone || !password) {
+      console.log('Validation failed: missing fields', { name, phone, password });
       return res.status(400).json({
         success: false,
         message: 'All fields are required'
@@ -1258,29 +1276,40 @@ app.post('/api/auth/register', async (req, res) => {
     formattedPhone = formattedPhone.replace(/\s+/g, '');
     console.log('Formatted phone:', formattedPhone);
 
-    // Foydalanuvchi mavjudligini tekshirish
-    console.log('Checking for existing user with:', { phone: formattedPhone, username });
-    const existingUser = await User.findOne({
-      $or: [{ phone: formattedPhone }, { username }]
-    });
+    // Telefon raqami mavjudligini tekshirish
+    console.log('Checking for existing user with phone:', formattedPhone);
+    const existingUser = await User.findOne({ phone: formattedPhone });
     console.log('Existing user check result:', existingUser);
 
     if (existingUser) {
-      console.log('Validation failed: user already exists');
+      console.log('Validation failed: phone already exists');
       return res.status(400).json({
         success: false,
-        message: 'User with this phone number or username already exists'
+        message: 'Bu telefon raqami allaqachon ro\'yxatdan o\'tgan'
       });
     }
+
+    // Unique username generatsiya qilish
+    let username;
+    let isUnique = false;
+    while (!isUnique) {
+      username = generateUsername();
+      const existingUsername = await User.findOne({ username });
+      if (!existingUsername) {
+        isUnique = true;
+      }
+    }
+    console.log('Generated unique username:', username);
 
     // Tasodifiy avatar rangi
     const avatarColor = generateRandomAvatarColor();
     console.log('Generated avatar color:', avatarColor);
 
     // Yangi foydalanuvchi yaratish
-    console.log('Creating new user with:', { username, phone: formattedPhone, password });
+    console.log('Creating new user with:', { username, name, phone: formattedPhone });
     const user = new User({
       username,
+      name,
       phone: formattedPhone,
       password,
       subscriptionTier: 'free',
@@ -1296,7 +1325,8 @@ app.post('/api/auth/register', async (req, res) => {
     // Send Telegram notification about new user registration
     const registrationDate = formatUzbekDate(new Date());
     const telegramMessage = `🎉 <b>Yangi foydalanuvchi ro'yxatdan o'tdi!</b>\n\n` +
-      `👤 <b>Foydalanuvchi:</b> ${username}\n` +
+      `👤 <b>Ism:</b> ${name}\n` +
+      `🔑 <b>Login:</b> ${username}\n` +
       `📱 <b>Telefon:</b> ${formattedPhone}\n` +
       `📅 <b>Sana:</b> ${registrationDate}\n` +
       `💎 <b>Obuna:</b> Bepul (Free)\n\n` +
@@ -1322,6 +1352,7 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: user._id,
         username: user.username,
+        name: user.name,
         phone: user.phone,
         subscriptionTier: user.subscriptionTier,
         role: user.role,
@@ -1501,6 +1532,7 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         id: user._id,
         username: displayName,
+        name: user.name || displayName,
         phone: user.phone,
         subscriptionTier: user.subscriptionTier,
         role: user.role,
@@ -1578,6 +1610,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
       user: {
         id: user._id,
         username: displayName,
+        name: user.name || displayName,
         phone: user.phone,
         subscriptionTier: user.subscriptionTier,
         role: user.role,
@@ -1593,6 +1626,69 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error fetching profile'
+    });
+  }
+});
+
+// Profilni yangilash (ism o'zgartirish)
+app.put('/api/profile', authenticateToken, async (req, res) => {
+  if (!mongoose.connection.readyState) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database not connected'
+    });
+  }
+
+  try {
+    const { name } = req.body;
+
+    // Validatsiya
+    if (name !== undefined && name !== null) {
+      if (typeof name !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Name must be a string'
+        });
+      }
+      if (name.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: 'Name must be 50 characters or less'
+        });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { name: name?.trim() || null },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        name: user.name,
+        phone: user.phone,
+        subscriptionTier: user.subscriptionTier,
+        role: user.role,
+        avatarColor: user.avatarColor
+      }
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating profile'
     });
   }
 });

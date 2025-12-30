@@ -289,7 +289,7 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                 <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200/20">
                     {!isCollapsed && (
                         <div className="flex items-center space-x-3">
-                            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getSubscriptionColor(user?.subscriptionTier, user?.role)} flex items-center justify-center shadow-lg`}>
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
                                 {getUserIcon(user?.role)}
                             </div>
                             <div>
@@ -340,12 +340,12 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 ) : (
-                                    user?.username?.charAt(0).toUpperCase() || 'U'
+                                    (user?.name || user?.username || 'U').charAt(0).toUpperCase()
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className={`font-semibold truncate ${settings.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                                    {user?.username || 'Foydalanuvchi'}
+                                    {user?.name || user?.username || 'Foydalanuvchi'}
                                 </p>
                                 <div className="flex items-center space-x-2">
                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${getSubscriptionColor(user?.subscriptionTier, user?.role)} text-white`}>

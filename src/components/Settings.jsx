@@ -32,9 +32,12 @@ const getSubscriptionTier = (tier, t) => {
 export function QarzdaftarSettings() {
   const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
-  const { user, settings, logout, updateUserSettings } = useAuth();
+  const { user, settings, logout, updateUserSettings, updateProfile } = useAuth();
   const t = useTranslation(language);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState(user?.name || '');
+  const [savingName, setSavingName] = useState(false);
   
   // Function to handle upgrade button click - navigate to pricing plans
   const handleUpgradeClick = () => {
@@ -52,6 +55,16 @@ export function QarzdaftarSettings() {
   
   // Use actual avatar color from user data or generate a random one
   const avatarColor = user?.avatarColor || 'bg-gradient-to-br from-blue-500 to-indigo-500';
+
+  // Handle name save
+  const handleSaveName = async () => {
+    setSavingName(true);
+    const result = await updateProfile({ name: newName.trim() || null });
+    setSavingName(false);
+    if (result.success) {
+      setEditingName(false);
+    }
+  };
 
   // Handle language change
   const handleLanguageChange = async (newLanguage) => {
@@ -102,7 +115,7 @@ export function QarzdaftarSettings() {
                 {/* Enhanced User Avatar */}
                 <div className="relative">
                   <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg ${avatarColor}`}>
-                    {user.username.charAt(0).toUpperCase()}
+                    {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div className="absolute -bottom-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,8 +125,66 @@ export function QarzdaftarSettings() {
                 </div>
                 
                 <div className="flex-1 space-y-3">
+                  {/* Name missing alert */}
+                  {!user?.name && !editingName && (
+                    <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">
+                      <p className="text-sm text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        {t('settings.user.nameRequired', 'Iltimos, ismingizni kiriting')}
+                        <button
+                          onClick={() => { setEditingName(true); setNewName(''); }}
+                          className="ml-auto px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs rounded transition-colors"
+                        >
+                          {t('settings.user.addName', 'Ism qo\'shish')}
+                        </button>
+                      </p>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
-                    <h4 className="font-bold text-gray-800 text-xl dark:text-slate-100">{user.username}</h4>
+                    {editingName ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          placeholder={t('settings.user.namePlaceholder', 'Ismingizni kiriting')}
+                          className="px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          maxLength={50}
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleSaveName}
+                          disabled={savingName}
+                          className="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {savingName ? '...' : '✓'}
+                        </button>
+                        <button
+                          onClick={() => { setEditingName(false); setNewName(user?.name || ''); }}
+                          className="px-3 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-gray-800 text-xl dark:text-slate-100">
+                          {user?.name || user?.username}
+                        </h4>
+                        <button
+                          onClick={() => { setEditingName(true); setNewName(user?.name || ''); }}
+                          className="p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                          title={t('settings.user.editName', 'Ismni tahrirlash')}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ring-1 ${
                         subscriptionTier === 'pro' 
@@ -126,6 +197,11 @@ export function QarzdaftarSettings() {
                       </span>
                     </div>
                   </div>
+                  
+                  {/* Username (login) */}
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                    {t('settings.user.login', 'Login')}: <span className="font-medium text-gray-700 dark:text-slate-300">@{user?.username}</span>
+                  </p>
                   
                   <div className="flex flex-wrap items-center gap-3">
                     <button 
@@ -311,6 +387,86 @@ export function QarzdaftarSettings() {
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Telegram Bot Connection Section */}
+          <div className="group relative bg-white/70 dark:bg-slate-800/80 backdrop-blur-sm border border-white/30 dark:border-slate-700/50 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-2xl transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-teal-500/10 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2 md:gap-3 dark:text-slate-100">
+                <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg md:rounded-xl flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 md:w-5 md:h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.751-.244-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.015 3.333-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.141.121.099.154.232.17.325.015.094.034.31.019.478z"/>
+                  </svg>
+                </div>
+                {t('settings.telegram.title', 'Telegram Bot')}
+              </h3>
+              
+              <div className="bg-white/60 dark:bg-slate-700/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-5 border border-white/40 dark:border-slate-600/50">
+                {user?.telegramId ? (
+                  // Ulangan holat
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          {t('settings.telegram.connected', 'Telegram ulangan')}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-slate-400">
+                          {t('settings.telegram.connectedDesc', 'Siz kunlik eslatmalar olasiz')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-slate-300">
+                      <p>📱 Telegram ID: <span className="font-mono">{user.telegramId}</span></p>
+                      {user.telegramUsername && (
+                        <p>👤 Username: @{user.telegramUsername}</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // Ulanmagan holat
+                  <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 dark:text-slate-100 mb-1">
+                          {t('settings.telegram.connect', 'Telegram botni ulash')}
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">
+                          {t('settings.telegram.connectDesc', 'Har kuni soat 9:00 da qarzlar haqida eslatma oling')}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                      <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                        {t('settings.telegram.instructions', 'Telegram botni ulash uchun quyidagi tugmani bosing:')}
+                      </p>
+                      <a
+                        href={`https://t.me/qarzdaftarchabot?start=${user?.username || user?.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.692-1.653-1.123-2.678-1.799-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.751-.244-1.349-.374-1.297-.789.027-.216.324-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.015 3.333-1.386 4.025-1.627 4.477-1.635.099-.002.321.023.465.141.121.099.154.232.17.325.015.094.034.31.019.478z"/>
+                        </svg>
+                        {t('settings.telegram.openBot', 'Telegram botni ochish')}
+                      </a>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 dark:text-slate-400">
+                      <p>💡 {t('settings.telegram.tip', 'Bot orqali har kuni ertaga to\'lov muddati keladigan qarzlar haqida xabar olasiz')}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

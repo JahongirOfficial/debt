@@ -37,9 +37,9 @@ class DailyReportService {
       timezone: "Asia/Tashkent"
     });
 
-    // Har kuni soat 08:30 da har bir foydalanuvchiga ertaga to'lov qilishi kerak bo'lgan qarzlar haqida xabar yuborish
-    cron.schedule('30 8 * * *', async () => {
-      console.log('🕘 Starting tomorrow debt reminders at 08:30');
+    // Har kuni soat 09:00 da har bir foydalanuvchiga ertaga to'lov qilishi kerak bo'lgan qarzlar haqida xabar yuborish
+    cron.schedule('0 9 * * *', async () => {
+      console.log('🕘 Starting tomorrow debt reminders at 09:00');
       await this.sendTomorrowDebtReminders();
     }, {
       timezone: "Asia/Tashkent"
@@ -54,7 +54,7 @@ class DailyReportService {
     });
 
     console.log('⏰ Daily reports scheduled for 09:00 (Tashkent time)');
-    console.log('⏰ Tomorrow debt reminders scheduled for 08:30 (Tashkent time)');
+    console.log('⏰ Tomorrow debt reminders scheduled for 09:00 (Tashkent time)');
     console.log('⏰ Daily all debts report scheduled for 23:59 (Tashkent time)');
   }
 

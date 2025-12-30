@@ -50,15 +50,30 @@ server {
     listen 80;
     server_name debt-tracker.prox.uz;
 
+    root /var/www/debt-tracker;
+    index index.html;
+
+    # MIME types for JavaScript modules
+    include /etc/nginx/mime.types;
+    types {
+        application/javascript js mjs;
+        text/css css;
+    }
+
     # Frontend static files
     location / {
-        root /var/www/debt-tracker;
         try_files \$uri \$uri/ /index.html;
+    }
+
+    # Static assets with proper caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
     }
 
     # Backend API proxy
     location /api/ {
-        proxy_pass http://localhost:5001/;
+        proxy_pass http://localhost:5001/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
