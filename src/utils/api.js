@@ -3,7 +3,7 @@
 const getApiBaseUrl = () => {
   // In production, use the domain-based URL
   if (import.meta.env.PROD) {
-    return 'https://main.qarzdaftarcha.uz/api';
+    return 'https://debt-tracker.prox.uz/api';
   }
   // In development, use localhost with the appropriate port
   // Changed from 5002 to 5003 to match the backend server port
