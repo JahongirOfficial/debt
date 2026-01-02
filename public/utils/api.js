@@ -13,7 +13,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 var getApiBaseUrl = function getApiBaseUrl() {
   // In production, use the domain-based URL
   if (import.meta.env.PROD) {
-    return 'https://debt-tracker.prox.uz/api';
+    return 'https://nolqarz.uz/api';
   }
   // In development, use localhost with the appropriate port
   // Changed from 5002 to 5003 to match the backend server port

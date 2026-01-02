@@ -208,6 +208,8 @@ export const DebtProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
+      console.log('DebtContext updateDebt - sending data:', debtData);
+      
       const response = await apiFetch(`/debts/${id}`, {
         method: 'PUT',
         headers: {
@@ -218,14 +220,25 @@ export const DebtProvider = ({ children }) => {
       });
       
       const data = await response.json();
+      console.log('DebtContext updateDebt - response:', data);
       
       if (data.success) {
-        // Optimistically update the local state immediately
-        setDebts(prevDebts => 
-          prevDebts.map(debt => 
-            debt._id === id ? { ...debt, ...data.debt } : debt
-          )
-        );
+        console.log('DebtContext updateDebt - updating local state with:', data.debt);
+        
+        // Force update the local state with the new debt data
+        setDebts(prevDebts => {
+          const newDebts = prevDebts.map(debt => {
+            if (debt._id === id) {
+              console.log('Found debt to update:', debt._id);
+              console.log('Old debtDate:', debt.debtDate);
+              console.log('New debtDate:', data.debt.debtDate);
+              return data.debt; // Replace entire debt object with server response
+            }
+            return debt;
+          });
+          console.log('Updated debts array');
+          return newDebts;
+        });
         
         // Return immediately after successful update
         const result = { success: true, debt: data.debt };

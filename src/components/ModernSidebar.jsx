@@ -239,6 +239,22 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
         );
     };
 
+    // Bottom navigation items for mobile (reordered: dashboard, calculator, debts (center), settings, more)
+    const bottomNavItems = menuItems.filter(item => 
+        ['dashboard', 'calculator', 'settings'].includes(item.id)
+    );
+
+    // Debts item for center FAB
+    const debtsItem = menuItems.find(item => item.id === 'debts');
+
+    // More menu items (items not in bottom nav)
+    const moreMenuItems = menuItems.filter(item => 
+        !['dashboard', 'debts', 'calculator', 'settings'].includes(item.id)
+    );
+
+    // State for more menu
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+
     return (
         <>
             {/* Mobile Overlay */}
@@ -454,6 +470,214 @@ export function ModernSidebar({ activeSection, switchSection, isOpen, onClose, o
                     setShowCreateBranchModal(false);
                 }}
             />
+
+            {/* Mobile Bottom Navigation */}
+            <div className={`
+                md:hidden fixed bottom-0 left-0 right-0 z-50
+                ${settings.theme === 'dark'
+                    ? 'bg-gray-900/95 border-t border-gray-700'
+                    : 'bg-white/95 border-t border-gray-200'
+                }
+                backdrop-blur-xl shadow-2xl
+                safe-area-bottom
+            `}>
+                <div className="flex items-center justify-around px-2 py-2 relative">
+                    {/* Dashboard */}
+                    <button
+                        onClick={() => {
+                            switchSection('/dashboard');
+                            setShowMoreMenu(false);
+                        }}
+                        className={`
+                            flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[50px]
+                            ${activeSection === 'dashboard'
+                                ? settings.theme === 'dark'
+                                    ? 'text-cyan-400 bg-cyan-500/10'
+                                    : 'text-orange-500 bg-orange-500/10'
+                                : settings.theme === 'dark'
+                                    ? 'text-gray-400 hover:text-gray-200'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }
+                        `}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        <span className="text-[10px] mt-1 font-medium">Asosiy</span>
+                    </button>
+
+                    {/* Calculator */}
+                    <button
+                        onClick={() => {
+                            switchSection('/calculator');
+                            setShowMoreMenu(false);
+                        }}
+                        className={`
+                            flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[50px]
+                            ${activeSection === 'calculator'
+                                ? settings.theme === 'dark'
+                                    ? 'text-cyan-400 bg-cyan-500/10'
+                                    : 'text-orange-500 bg-orange-500/10'
+                                : settings.theme === 'dark'
+                                    ? 'text-gray-400 hover:text-gray-200'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }
+                        `}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-[10px] mt-1 font-medium">Hisoblash</span>
+                    </button>
+
+                    {/* Center FAB - Debts (larger) */}
+                    {debtsItem && (
+                        <button
+                            onClick={() => {
+                                switchSection('/debts');
+                                setShowMoreMenu(false);
+                            }}
+                            className={`
+                                flex items-center justify-center w-14 h-14 -mt-6 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105
+                                ${activeSection === 'debts'
+                                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-orange-500/30'
+                                    : settings.theme === 'dark'
+                                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-cyan-500/30'
+                                        : 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-orange-500/30'
+                                }
+                            `}
+                        >
+                            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                    )}
+
+                    {/* Settings */}
+                    <button
+                        onClick={() => {
+                            switchSection('/settings');
+                            setShowMoreMenu(false);
+                        }}
+                        className={`
+                            flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[50px]
+                            ${activeSection === 'settings'
+                                ? settings.theme === 'dark'
+                                    ? 'text-cyan-400 bg-cyan-500/10'
+                                    : 'text-orange-500 bg-orange-500/10'
+                                : settings.theme === 'dark'
+                                    ? 'text-gray-400 hover:text-gray-200'
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }
+                        `}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[10px] mt-1 font-medium">Sozlama</span>
+                    </button>
+
+                    {/* More button */}
+                    {moreMenuItems.length > 0 && (
+                        <button
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className={`
+                                flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all duration-200 min-w-[50px]
+                                ${showMoreMenu
+                                    ? settings.theme === 'dark'
+                                        ? 'text-cyan-400 bg-cyan-500/10'
+                                        : 'text-orange-500 bg-orange-500/10'
+                                    : settings.theme === 'dark'
+                                        ? 'text-gray-400 hover:text-gray-200'
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }
+                            `}
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                            <span className="text-[10px] mt-1 font-medium">Ko'proq</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* More Menu Popup */}
+                {showMoreMenu && (
+                    <div 
+                        className={`absolute bottom-full left-0 right-0 mb-2 mx-4 rounded-2xl shadow-2xl overflow-hidden ${
+                            settings.theme === 'dark'
+                                ? 'bg-gray-800 border border-gray-700'
+                                : 'bg-white border border-gray-200'
+                        }`}
+                    >
+                        <div className="p-3 grid grid-cols-3 gap-2">
+                            {moreMenuItems.map((item) => {
+                                const isActive = activeSection === item.id;
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            switchSection(item.route);
+                                            setShowMoreMenu(false);
+                                        }}
+                                        className={`
+                                            flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200
+                                            ${isActive
+                                                ? settings.theme === 'dark'
+                                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                                    : 'bg-orange-500/10 text-orange-500'
+                                                : settings.theme === 'dark'
+                                                    ? 'text-gray-300 hover:bg-gray-700'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                            }
+                                        `}
+                                    >
+                                        <div className={`${isActive ? 'scale-110' : ''} transition-transform`}>
+                                            {item.icon}
+                                        </div>
+                                        <span className={`text-[11px] mt-2 font-medium text-center leading-tight ${isActive ? 'font-semibold' : ''}`}>
+                                            {item.id === 'branches' ? 'Filiallar' :
+                                             item.id === 'employees' ? 'Xodimlar' :
+                                             item.id === 'ratings' ? 'Reytinglar' :
+                                             item.id === 'analytics' ? 'Analitika' :
+                                             item.id === 'pricing' ? 'Tariflar' : item.label}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Logout button in more menu */}
+                        <div className={`border-t ${settings.theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} p-3`}>
+                            <button
+                                onClick={() => {
+                                    setShowMoreMenu(false);
+                                    logout();
+                                }}
+                                className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
+                                    settings.theme === 'dark'
+                                        ? 'text-red-400 hover:bg-red-900/20'
+                                        : 'text-red-600 hover:bg-red-50'
+                                }`}
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                <span className="font-medium">Chiqish</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Overlay for more menu */}
+            {showMoreMenu && (
+                <div 
+                    className="md:hidden fixed inset-0 z-40"
+                    onClick={() => setShowMoreMenu(false)}
+                />
+            )}
         </>
     );
 }

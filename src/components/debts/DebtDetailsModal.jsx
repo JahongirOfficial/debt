@@ -114,7 +114,7 @@ export function DebtDetailsModal({
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.debtDate', 'Qarz sanasi')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.debtDate', 'To\'lov sanasi')}</p>
                   <p className="text-sm font-semibold text-gray-800 dark:text-white">
                     {new Date(debt.debtDate).toLocaleDateString('uz-UZ', {
                       year: 'numeric',
@@ -125,30 +125,45 @@ export function DebtDetailsModal({
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* Phone and Description - Side by Side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Phone Number */}
             <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-gray-600/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.phone', 'Telefon')}</p>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">
-                    {debt.phone 
-                      ? formatPhoneNumber(debt.phone, debt.countryCode)
-                      : <span className="text-gray-400 italic">{t('common.notAvailable', 'Mavjud emas')}</span>
-                    }
-                  </p>
+                  {debt.phone ? (
+                    <a 
+                      href={`tel:${debt.countryCode || ''}${debt.phone}`}
+                      className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate block"
+                    >
+                      {formatPhoneNumber(debt.phone, debt.countryCode)}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-400 italic">{t('common.notAvailable', 'Mavjud emas')}</span>
+                  )}
                 </div>
+                {debt.phone && (
+                  <a
+                    href={`tel:${debt.countryCode || ''}${debt.phone}`}
+                    className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors flex-shrink-0"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Description */}
-          {debt.description && (
+            {/* Description */}
             <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-gray-600/30">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -156,51 +171,29 @@ export function DebtDetailsModal({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                   </svg>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">{t('debts.form.description', 'Izoh')}</p>
-                  <p className="text-sm text-gray-800 dark:text-white leading-relaxed">
-                    {debt.description}
+                  <p className="text-sm text-gray-800 dark:text-white leading-relaxed line-clamp-3">
+                    {debt.description || <span className="text-gray-400 italic">{t('common.notAvailable', 'Mavjud emas')}</span>}
                   </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Dates Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {debt.paidAt && (
-              <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-gray-600/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.paidDate', 'To\'langan sana')}</p>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-white">
-                      {new Date(debt.paidAt).toLocaleDateString('uz-UZ', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
+          {/* Dates Grid - Only Paid Date if exists */}
+          {debt.paidAt && (
             <div className="bg-white/60 dark:bg-gray-700/60 backdrop-blur-sm rounded-2xl p-4 border border-white/30 dark:border-gray-600/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.createdDate', 'Yaratilgan')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('debts.form.paidDate', 'To\'langan sana')}</p>
                   <p className="text-sm font-semibold text-gray-800 dark:text-white">
-                    {new Date(debt.createdAt).toLocaleDateString('uz-UZ', {
+                    {new Date(debt.paidAt).toLocaleDateString('uz-UZ', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
@@ -209,7 +202,7 @@ export function DebtDetailsModal({
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 justify-center pt-4">

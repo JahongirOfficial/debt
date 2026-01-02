@@ -181,6 +181,8 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   const models = getModels();
   
+  console.log('PUT /debts/:id - Request body:', req.body);
+  
   // Test mode response
   if (!models) {
     return res.json({
@@ -222,11 +224,23 @@ router.put('/:id', authenticateToken, async (req, res) => {
     }
 
     const previousAmount = debt.amount;
+    
+    // Prepare update data
+    const updateData = { ...req.body, updatedAt: new Date() };
+    
+    // Handle debtDate conversion if provided
+    if (req.body.debtDate) {
+      updateData.debtDate = new Date(req.body.debtDate);
+      console.log('Converting debtDate:', req.body.debtDate, 'to:', updateData.debtDate);
+    }
+    
     const updatedDebt = await models.Debt.findByIdAndUpdate(
       id,
-      { ...req.body, updatedAt: new Date() },
+      updateData,
       { new: true }
     );
+    
+    console.log('Updated debt:', updatedDebt);
 
     // Create history record
     const historyRecord = new models.DebtHistory({
@@ -412,10 +426,13 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
   
   try {
     const { id } = req.params;
-    const { amount, type, reason } = req.body;
+    const { amount, type, reason, newDebtDate } = req.body;
 
-    // Validate input
-    if (!amount || !type || !['add', 'subtract'].includes(type)) {
+    // Parse adjustment amount
+    const adjustmentAmount = parseFloat(amount) || 0;
+    
+    // Validate input - allow 0 amount if newDebtDate is provided (for date-only updates)
+    if (adjustmentAmount < 0 || (adjustmentAmount > 0 && !type) || (adjustmentAmount > 0 && !['add', 'subtract'].includes(type))) {
       return res.status(400).json({ 
         success: false, 
         message: 'Invalid adjustment data' 
@@ -424,17 +441,20 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
 
     // Test mode response
     if (!models) {
-      const adjustmentAmount = parseFloat(amount);
       const mockCurrentAmount = 1000000; // Mock current amount
-      const newAmount = type === 'add' 
-        ? mockCurrentAmount + adjustmentAmount 
-        : Math.max(0, mockCurrentAmount - adjustmentAmount);
+      let newAmount = mockCurrentAmount;
+      if (adjustmentAmount > 0) {
+        newAmount = type === 'add' 
+          ? mockCurrentAmount + adjustmentAmount 
+          : Math.max(0, mockCurrentAmount - adjustmentAmount);
+      }
 
       return res.json({
         success: true,
         debt: {
           _id: id,
           amount: newAmount,
+          debtDate: newDebtDate || new Date(),
           updatedAt: new Date()
         },
         message: 'Debt amount adjusted successfully (test mode)'
@@ -464,23 +484,33 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
       });
     }
 
-    const adjustmentAmount = parseFloat(amount);
     const previousAmount = debt.amount;
-    let newAmount;
+    let newAmount = previousAmount;
 
-    if (type === 'add') {
-      newAmount = previousAmount + adjustmentAmount;
-    } else { // subtract
-      newAmount = Math.max(0, previousAmount - adjustmentAmount);
+    // Only adjust amount if adjustmentAmount > 0
+    if (adjustmentAmount > 0) {
+      if (type === 'add') {
+        newAmount = previousAmount + adjustmentAmount;
+      } else if (type === 'subtract') {
+        newAmount = Math.max(0, previousAmount - adjustmentAmount);
+      }
     }
 
-    // Update debt amount
+    // Prepare update data
+    const updateData = { 
+      amount: newAmount,
+      updatedAt: new Date()
+    };
+
+    // Update debt date if provided
+    if (newDebtDate) {
+      updateData.debtDate = new Date(newDebtDate);
+    }
+
+    // Update debt amount and optionally date
     const updatedDebt = await models.Debt.findByIdAndUpdate(
       id,
-      { 
-        amount: newAmount,
-        updatedAt: new Date()
-      },
+      updateData,
       { new: true }
     );
 
@@ -495,7 +525,7 @@ router.patch('/:id/adjust', authenticateToken, async (req, res) => {
       creditor: debt.creditor,
       description: debt.description,
       status: debt.status,
-      reason: reason || `Debt amount ${type === 'add' ? 'increased' : 'decreased'} by ${adjustmentAmount}`
+      reason: reason || `Debt amount ${type === 'add' ? 'increased' : 'decreased'} by ${adjustmentAmount}${newDebtDate ? '. Date changed to ' + newDebtDate : ''}`
     });
     await historyRecord.save();
 

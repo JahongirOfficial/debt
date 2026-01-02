@@ -11,6 +11,7 @@ export function DebtCard({
     onCardClick,
     onAdjustClick,
     onMarkAsPaid,
+    onExtendDate,
     showBranchIndicator = false
 }) {
     const [language] = useStoredState('qarzdaftar_language', 'uz');
@@ -104,7 +105,7 @@ export function DebtCard({
                 {/* Debt Date */}
                 <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {t('debts.form.debtDate', 'Qarz sanasi')}
+                        {t('debts.form.debtDate', 'To\'lov sanasi')}
                     </span>
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {new Date(debt.debtDate).toLocaleDateString()}
@@ -170,6 +171,22 @@ export function DebtCard({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
                         </button>
+
+                        {/* Muddatni uzaytirish */}
+                        {canEdit && onExtendDate && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onExtendDate(debt);
+                                }}
+                                className="w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white hover:shadow-lg hover:scale-110 cursor-pointer"
+                                title="Muddatni uzaytirish"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

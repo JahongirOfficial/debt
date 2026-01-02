@@ -14,16 +14,20 @@ export function DebtAdjustModal({ isOpen, debt, type, onClose, onSave }) {
     const [adjustForm, setAdjustForm] = useState({
         amount: '',
         reason: '',
-        type: 'add'
+        type: 'add',
+        newDebtDate: ''
     });
 
     // Initialize form when debt or type changes
     useEffect(() => {
         if (debt && type) {
+            // Format the debt date for input
+            const currentDebtDate = debt.debtDate ? new Date(debt.debtDate).toISOString().split('T')[0] : '';
             setAdjustForm({
                 amount: '',
                 reason: '',
-                type: type
+                type: type,
+                newDebtDate: currentDebtDate
             });
         }
     }, [debt, type]);
@@ -64,28 +68,17 @@ export function DebtAdjustModal({ isOpen, debt, type, onClose, onSave }) {
         const adjustmentData = {
             amount: adjustmentAmount,
             type: adjustForm.type,
-            reason: adjustForm.reason || `Qarz miqdori ${adjustForm.type === 'add' ? 'oshirildi' : 'kamaytirildi'}`
+            reason: adjustForm.reason || `Qarz miqdori ${adjustForm.type === 'add' ? 'oshirildi' : 'kamaytirildi'}`,
+            newDebtDate: adjustForm.newDebtDate || undefined
         };
-
-        // Store data before closing modal
-        const adjustmentType = adjustForm.type;
 
         // Close modal immediately for better UX
         onClose();
-        setAdjustForm({ amount: '', reason: '', type: 'add' });
-
-        // Show loading notification
-        showSuccess('Jarayon amalga oshirilmoqda...');
+        setAdjustForm({ amount: '', reason: '', type: 'add', newDebtDate: '' });
 
         try {
             await onSave(adjustmentData);
-
-            // Show success message
-            showSuccess(
-                adjustmentType === 'add'
-                    ? `Qarz miqdori ${formatNumberWithSpaces(adjustmentAmount.toString())} ${debt.currency || currency} ga oshirildi`
-                    : `Qarz miqdori ${formatNumberWithSpaces(adjustmentAmount.toString())} ${debt.currency || currency} ga kamaytirildi`
-            );
+            // Success alert is handled in DebtsMain.jsx handleSaveAdjustment
         } catch (error) {
             console.error('Error adjusting debt amount:', error);
             showError('Qarz miqdorini o\'zgartirishda xatolik yuz berdi');
@@ -160,6 +153,22 @@ export function DebtAdjustModal({ isOpen, debt, type, onClose, onSave }) {
                             className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             autoFocus
                         />
+                    </div>
+
+                    {/* New Debt Date Field */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            📅 {t('debts.form.newDebtDate', 'Keyingi to\'lov sanasi')}
+                        </label>
+                        <input
+                            type="date"
+                            value={adjustForm.newDebtDate}
+                            onChange={(e) => setAdjustForm({ ...adjustForm, newDebtDate: e.target.value })}
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Agar o'zgartirmoqchi bo'lsangiz, yangi sanani tanlang
+                        </p>
                     </div>
 
                     <div>

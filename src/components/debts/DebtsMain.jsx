@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStoredState } from '../../utils/storageUtils';
 import { useTranslation } from '../../utils/translationUtils';
@@ -44,6 +44,8 @@ export function QarzdaftarDebts() {
   const [adjustType, setAdjustType] = useState('add');
   const [activeTab, setActiveTab] = useState('dueToday');
   const [debtSearch, setDebtSearch] = useState('');
+  const [showExtendDateModal, setShowExtendDateModal] = useState(null);
+  const [newExtendDate, setNewExtendDate] = useState('');
 
 
   // Filter debts based on current filters and active tab
@@ -148,9 +150,6 @@ export function QarzdaftarDebts() {
   };
 
   const handleMarkAsPaid = async (debtId) => {
-    // Show loading notification immediately
-    showSuccess('To\'langan deb belgilanmoqda...');
-
     try {
       const result = await markDebtAsPaid(debtId, '');
       if (result && result.success) {
@@ -185,9 +184,6 @@ export function QarzdaftarDebts() {
 
   // Handle add debt
   const handleAddDebt = async (debtData) => {
-    // Show loading notification
-    showSuccess('Qarz qo\'shilmoqda...');
-
     try {
       const result = await createDebt({
         ...debtData,
@@ -196,7 +192,7 @@ export function QarzdaftarDebts() {
       });
 
       if (result && result.success) {
-        showSuccess(`${debtData.creditor} uchun qarz muvaffaqiyatli qo'shildi`);
+        showSuccess(`${debtData.creditor} uchun qarz qo'shildi`);
       } else {
         showError(result?.message || 'Qarz qo\'shishda xatolik yuz berdi');
       }
@@ -216,13 +212,10 @@ export function QarzdaftarDebts() {
     // Clear editing state immediately
     setEditingDebt(null);
 
-    // Show loading notification
-    showSuccess('Yangilanmoqda...');
-
     try {
       const result = await updateDebt(debtId, updateData);
       if (result && result.success) {
-        showSuccess('Qarz ma\'lumotlari muvaffaqiyatli yangilandi');
+        showSuccess('Qarz ma\'lumotlari yangilandi');
       } else {
         showError(result?.message || 'Qarzni yangilashda xatolik yuz berdi');
       }
@@ -245,7 +238,7 @@ export function QarzdaftarDebts() {
     try {
       const result = await adjustDebtAmount(debtId, adjustmentData);
       if (result && result.success) {
-        showSuccess('Qarz miqdori muvaffaqiyatli o\'zgartirildi');
+        showSuccess('Qarz miqdori o\'zgartirildi');
       } else {
         showError(result?.message || 'Qarz miqdorini o\'zgartirishda xatolik yuz berdi');
       }
@@ -255,10 +248,58 @@ export function QarzdaftarDebts() {
     }
   };
 
-  const handleDelete = async (debtId) => {
-    // Show loading notification immediately
-    showSuccess('O\'chirilmoqda...');
+  // Handle extend date - use adjust endpoint like +/- buttons
+  const handleExtendDate = async (debtId, newDate) => {
+    try {
+      // Use adjustDebtAmount with 0 amount just to update the date
+      const formattedDate = new Date(newDate).toISOString().split('T')[0];
+      console.log('Extending date for debt:', debtId, 'to:', formattedDate);
+      
+      const result = await adjustDebtAmount(debtId, {
+        amount: 0,
+        type: 'add',
+        reason: 'Muddat uzaytirildi',
+        newDebtDate: formattedDate
+      });
+      
+      console.log('Extend date result:', result);
+      
+      if (result && result.success) {
+        showSuccess('To\'lov sanasi muvaffaqiyatli o\'zgartirildi');
+      } else {
+        showError(result?.message || 'Sanani o\'zgartirishda xatolik yuz berdi');
+      }
+    } catch (error) {
+      console.error('Error extending date:', error);
+      showError('Sanani o\'zgartirishda xatolik yuz berdi');
+    }
+  };
 
+  // Handle open extend date modal
+  const handleOpenExtendDateModal = (debt) => {
+    setShowExtendDateModal(debt);
+    setNewExtendDate(new Date(debt.debtDate).toISOString().split('T')[0]);
+  };
+
+  // Handle save extend date
+  const handleSaveExtendDate = async () => {
+    if (!showExtendDateModal || !newExtendDate) {
+      console.log('handleSaveExtendDate - missing data:', { showExtendDateModal, newExtendDate });
+      return;
+    }
+    
+    console.log('handleSaveExtendDate - saving date:', newExtendDate, 'for debt:', showExtendDateModal._id);
+    
+    const debtId = showExtendDateModal._id;
+    const dateToSave = newExtendDate; // Store the date before clearing state
+    
+    setShowExtendDateModal(null);
+    setNewExtendDate('');
+    
+    await handleExtendDate(debtId, dateToSave);
+  };
+
+  const handleDelete = async (debtId) => {
     try {
       const result = await deleteDebt(debtId, '');
       if (result && result.success) {
@@ -386,6 +427,7 @@ export function QarzdaftarDebts() {
             onCardClick={handleCardClick}
             onAdjustClick={handleAdjustClick}
             onMarkAsPaid={handleMarkAsPaid}
+            onExtendDate={handleOpenExtendDateModal}
             onAddNew={() => setShowAddForm(true)}
           />
         </div>
@@ -436,6 +478,74 @@ export function QarzdaftarDebts() {
         onClose={() => setShowAdjustModal(null)}
         onSave={handleSaveAdjustment}
       />
+
+      {/* Extend Date Modal */}
+      {showExtendDateModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowExtendDateModal(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold text-white">📅 Muddatni uzaytirish</h3>
+                  <p className="text-white/80 text-sm">{showExtendDateModal.creditor}</p>
+                </div>
+                <button
+                  onClick={() => setShowExtendDateModal(null)}
+                  className="p-2 rounded-full bg-white/20 hover:bg-white/30 text-white"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Hozirgi sana
+                </label>
+                <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <span className="text-lg font-bold text-gray-800 dark:text-white">
+                    {new Date(showExtendDateModal.debtDate).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Yangi to'lov sanasi
+                </label>
+                <input
+                  type="date"
+                  value={newExtendDate}
+                  onChange={(e) => setNewExtendDate(e.target.value)}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowExtendDateModal(null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleSaveExtendDate}
+                  disabled={!newExtendDate}
+                  className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg font-medium"
+                >
+                  Saqlash
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
 
     </div>

@@ -369,23 +369,6 @@ export function QarzdaftarApp() {
                   onCollapseChange={setIsSidebarCollapsed}
                 />
 
-                {/* Mobile Menu Toggle Button */}
-                <button
-                  className="md:hidden fixed top-4 right-4 z-30 w-12 h-12 flex items-center justify-center bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                  aria-label={isMobileSidebarOpen ? 'Close menu' : 'Open menu'}
-                >
-                  {isMobileSidebarOpen ? (
-                    <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg className="w-6 h-6 text-gray-700 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  )}
-                </button>
-
 
 
 
@@ -393,7 +376,7 @@ export function QarzdaftarApp() {
 
 
                 {/* Main Content with dynamic margin for modern sidebar */}
-                <div className={`flex-1 p-4 md:p-8 overflow-auto transition-all duration-300 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-72'
+                <div className={`flex-1 p-4 md:p-8 overflow-auto transition-all duration-300 pb-24 md:pb-8 ${isSidebarCollapsed ? 'md:ml-16' : 'md:ml-72'
                   }`}>
                   <Routes>
                     <Route path="/login" element={<Login />} />

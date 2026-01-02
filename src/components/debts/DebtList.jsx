@@ -8,6 +8,7 @@ export function DebtList({
   onCardClick, 
   onAdjustClick, 
   onMarkAsPaid, 
+  onExtendDate,
   onAddNew 
 }) {
   const [language] = useStoredState('qarzdaftar_language', 'uz');
@@ -66,6 +67,7 @@ export function DebtList({
             onCardClick={onCardClick}
             onAdjustClick={onAdjustClick}
             onMarkAsPaid={onMarkAsPaid}
+            onExtendDate={onExtendDate}
           />
         ))}
       </div>
@@ -81,6 +83,7 @@ export function DebtList({
             onCardClick={onCardClick}
             onAdjustClick={onAdjustClick}
             onMarkAsPaid={onMarkAsPaid}
+            onExtendDate={onExtendDate}
           />
         ))}
       </div>
